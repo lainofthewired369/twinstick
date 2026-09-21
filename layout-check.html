@@ -1,0 +1,7 @@
+<!doctype html>
+<html lang="en"><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>Rift Runners — layout check</title>
+<style>body{margin:20px;background:#080d16;color:#d9edff;font:14px system-ui}button{padding:12px;margin:0 6px 16px 0;background:#193049;color:#fff;border:1px solid #547792;border-radius:8px}iframe{display:block;border:1px solid #547792;width:844px;height:390px;max-width:none}p{color:#9bb6ce}</style>
+<h1>Responsive layout check</h1><p>The actual game runs inside a phone-sized viewport. Use its normal controls to check panels and scrolling.</p>
+<button data-size="844,390">Landscape 844 × 390</button><button data-size="667,375">Small landscape 667 × 375</button><button data-size="390,844">Portrait 390 × 844</button>
+<iframe id="preview" src="index.html" title="Game viewport"></iframe>
+<script>document.querySelectorAll('[data-size]').forEach(b=>b.onclick=()=>{const [w,h]=b.dataset.size.split(',');const f=document.querySelector('iframe');f.style.width=w+'px';f.style.height=h+'px';});</script></html>

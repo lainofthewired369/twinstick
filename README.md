@@ -1,4 +1,4 @@
-# Rift Runners — progression and bosses (v1.3.1)
+# Rift Runners — Afterburn (v1.4)
 Play: https://lainofthewired369.github.io/twinstick/
 
 ## Build a run
@@ -28,10 +28,45 @@ Choose your own character and starter before entering ONLINE P2P.
 1. Host leaves the room password blank to generate one, or enters a unique game-only password of 8–64 characters.
 2. Tap HOST ROOM and wait for “Room ready”.
 3. Share the password; your friend enters it and taps JOIN ROOM.
-4. Both players must refresh to v1.3.1 before connecting.
+4. Both players must refresh to v1.4 before connecting.
 
 ## Boss waves
-A Rift Warden arrives after the regular enemies finish spawning on every fifth wave (5, 10, 15…). It alternates between aimed three-shot volleys and circular bullet patterns, with a visible warning before each attack. It fires faster and adds more radial bullets below half health. Health and projectile speed scale with wave number, with extra health for co-op. Dash through projectiles or move out of their path. Defeating it grants a guaranteed weapon crate plus bonus materials and XP. The shop opens after all enemies are defeated; hostile bullets clear between waves.
+A Rift Warden arrives after the regular enemies finish spawning on every fifth wave (5, 10, 15…). It cycles through five-shot aimed volleys, 16-shot rings and nine-shot fans, warning before firing. Below half health it fires faster and rings grow to 20 shots. It periodically summons runners and gunners. Defeating it grants a guaranteed weapon crate plus bonus materials and XP; all remaining enemies must also be defeated to open the shop.
+
+Boss scaling snapshots the team's equipped weapon damage, rarity, attack speed, critical chance and projectile count, plus maximum HP, armor, shields, regeneration and life-steal when the boss spawns. This adjusts a wave-scaled baseline, with separate two-player health scaling. Loadout pressure is capped at 4× health, 1.3× attack frequency and 1.35× projectile damage. Warnings stay 0.8 seconds. The snapshot stays fixed for that encounter; it does not change when players take damage or pick up a weapon. The boss HUD shows its health multiplier.
+
+## Afterburn interface and enemies
+Landscape phones use a compact header, safe-area-aware sticks, a compact run HUD, and a split shop with persistent Ready/Reroll controls. Market, Weapons and Augments have separate tabs; each content area scrolls independently. Portrait remains supported. A dark navy, mint and violet interface replaces the earlier stacked panels.
+
+Eight regular enemy types: drones, tanks, fast runners, ranged gunners, telegraphed charging enemies, splitters that release three small swarm enemies, and durable spread-firing sentinels. New types enter from waves 2 and 4. Silhouettes and colors distinguish threats.
+
+## Random augments
+Each new shop roll has two weapons and two random augments, respecting locks. Augments have the same four rarities as weapons, with bonuses and trade-offs multiplied by rarity tier. Installed augments are listed in the Augments tab.
+
+| Augment | Common-tier effect |
+|---|---|
+| Longshot Scope | +15% range |
+| Tractor Coil | +35 pickup range, +2 harvesting |
+| Ceramic Plating | +3 armor, −4% speed |
+| Unstable Reactor | +25% damage, −10 maximum HP |
+| Belt Loader | +20% attack speed, −5% damage |
+| Nanite Garden | +10 HP, +0.4 HP/s |
+| Vampire Circuit | Heal 2% of dealt damage, capped at 12% |
+| Cryo Rounds | Hits slow 12% for one second, capped at 50% |
+| Phase Drill | +1 projectile penetration, capped at +8 |
+| Aegis Battery | +15 shield; regenerates after four seconds unharmed |
+| Vector Thrusters | +5% speed, 10% shorter dash cooldown |
+| Hunter Chip | +7% critical chance, capped at 80% |
+| Salvage Heart | Heal 1 HP per kill |
+| Ore Scanner | +15% pickup materials |
+| Neural Link | +20% pickup XP |
+| Blast Lens | +20% rocket blast radius |
+| Scrap Printer | +6 harvesting |
+| Lucky Comet | +15 luck, +3 pickup range |
+| Prism Splitter | +1 projectile, −12% damage |
+| Redline Core | +20% damage below half HP |
+
+Range and blast radius cap at 2.5×, projectile count at 7, speed at 100–480, max HP has a floor of 25, and dash cooldown has a floor of 0.35 seconds. Shields regenerate 15% of maximum per second. Economy bonuses apply on collection; survival/harvest payouts are separate.
 
 Passwords ignore letter case and surrounding whitespace. Anyone with the password can join; never use an account password. Each player controls their own ship, wallet, shop, XP upgrades and inventory. The host validates transactions, including phase, price, capacity, matching tiers and state revisions. Guests send requests, not authoritative stats. The host controls restarting a run.
 
