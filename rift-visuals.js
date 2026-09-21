@@ -36,7 +36,7 @@ function draw(x,s){const {W=1280,H=720,t=0,reduced=false}=s;x.save();background(
  for(const b of s.shots){const a=Math.atan2(b.vy,b.vx);x.strokeStyle=b.color||'#7dffd0';x.lineWidth=(b.r||3)*1.5;x.globalAlpha=.35;x.beginPath();x.moveTo(b.x-Math.cos(a)*24,b.y-Math.sin(a)*24);x.lineTo(b.x,b.y);x.stroke();x.globalAlpha=1;x.fillStyle='#efffff';x.beginPath();x.arc(b.x,b.y,Math.max(2,(b.r||3)*.6),0,TAU);x.fill();}
  for(const b of s.enemyShots){x.fillStyle='#ff5f91';x.beginPath();x.arc(b.x,b.y,b.r,0,TAU);x.fill();circle(x,b.x,b.y,b.r+2,'#ffd1e380',1);}
  for(const f of s.effects){x.save();x.globalAlpha=Math.min(1,f.life*7);x.strokeStyle=f.color;x.lineWidth=5;x.beginPath();if(f.kind==='blast'){x.arc(f.x,f.y,f.r,0,TAU);x.stroke();circle(x,f.x,f.y,f.r*.78,'#eaf6ff',1);}else if(f.kind==='beam'){x.moveTo(f.x,f.y);x.lineTo(f.bx,f.by);x.stroke();x.strokeStyle='#fff';x.lineWidth=1;x.stroke();}else{x.arc(f.x,f.y,f.r,f.angle-f.arc/2,f.angle+f.arc/2);x.stroke();}x.restore();}
- for(const e of s.enemies)enemy(x,e,t,reduced);for(const p of s.players)ship(x,p,t,reduced);
+ for(const e of s.enemies){if(e.mirror)ship(x,{...e,angle:e.aim,color:e.hit?'#ffffff':e.color},t,reduced);else enemy(x,e,t,reduced);}for(const p of s.players)ship(x,p,t,reduced);
  for(const p of s.particles){x.globalAlpha=Math.max(0,Math.min(1,p.life*2));x.strokeStyle=p.color;x.lineWidth=2;x.beginPath();x.moveTo(p.x,p.y);x.lineTo(p.x-p.vx*.025,p.y-p.vy*.025);x.stroke();}x.globalAlpha=1;
  if(s.paused){x.fillStyle='#040819aa';x.fillRect(0,0,W,H);x.textAlign='center';x.fillStyle='#e8f7ff';x.font='700 40px system-ui';x.fillText('PAUSED',W/2,H/2);}x.restore();
 }

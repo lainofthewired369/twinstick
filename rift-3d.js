@@ -81,7 +81,7 @@ function draw(x,s){
  }
  for(const d of s.drops){const c=d.kind==='crate'?'#ffd180':'#7dffd0';shadow(d.x,d.y,8);prism(d.x,d.y,polygon(8,4),4,12,c,s.reduced?0:s.t*.6,.15);}
  for(const e of s.enemies){
-  if(e.hp<=0)continue;const c=e.hit?'#ffffff':colors[e.type]||colors.drone,h=e.type==='boss'?46:e.type==='tank'?26:18;
+  if(e.hp<=0||e.mirror)continue;const c=e.hit?'#ffffff':colors[e.type]||colors.drone,h=e.type==='boss'?46:e.type==='tank'?26:18;
   shadow(e.x,e.y,e.r+4);
   if((e.type==='lancer'||e.beamAttack)&&e.windup>0||e.beamLeft>0){const end=pointAt(e.x,e.y,Math.cos(e.aim)*(sphereMode?600:1000),Math.sin(e.aim)*(sphereMode?600:1000));line(e.x,e.y,end.x,end.y,1,e.beamLeft>0?12:2,e.beamLeft>0?'#fff1ff':'#71345d');}
   const sides=['runner','charger','gunner'].includes(e.type)?3:['tank','sentinel'].includes(e.type)?4:6;
@@ -91,7 +91,7 @@ function draw(x,s){
   if(e.type==='boss'||e.type==='sentinel')for(let n=0;n<6;n++){const a=n*TAU/6+(s.reduced?0:s.t*.35),at=pointAt(e.x,e.y,Math.cos(a)*(e.r+6),Math.sin(a)*(e.r+6));box(at.x,at.y,17,7,12,12,c,a);}
   if(e.slowTime>0)ring(e.x,e.y,e.r+5,3,'#a2efff');
  }
- for(const p of s.players){
+ for(const p of [...s.players,...s.enemies.filter(e=>e.mirror).map(e=>({...e,angle:e.aim,color:e.hit?'#ffffff':e.color}))]){
   if(p.hp<=0)continue;shadow(p.x,p.y,27);
   prism(p.x,p.y,[[30,0],[-19,20],[-10,0],[-19,-20]],3,12,p.color,p.angle,.65);
   prism(p.x,p.y,[[16,0],[-8,7],[-8,-7]],15,8,'#d4f8ff',p.angle,.4);
