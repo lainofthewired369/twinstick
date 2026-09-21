@@ -27,7 +27,7 @@ function harness(){const elements={},events={},stored={};const el=()=>({textCont
 const t=harness();t.start('local');t.openShop();let state=t.state();const [a,b]=state.players;a.pending=0;b.pending=0;const request=(p,action,extra={})=>({action,wave:t.state().wave,revision:p.revision,...extra});t.applyShop(0,request(a,'ready'));assert(t.state().between);t.applyShop(1,request(b,'ready'));assert.equal(t.state().wave,2);assert.equal(t.state().between,false);
 t.collect({x:0,y:0,kind:'material',value:30});assert.equal(a.materials,b.materials);assert(a.pending>0);t.openShop();t.ui();assert.equal(t.state().profile.best,2);
 for(const id of ids){t.start('solo');const p=t.state().players[0];p.crit=0;p.weapons=[P.weapon(id)];p.angle=0;t.setEnemies([{id:1,x:500,y:360,r:14,hp:1000,speed:0,type:'drone',burn:0,burnDamage:0,hit:0}]);t.shoot(p);for(let i=0;i<20;i++)t.simulate(.016);assert(t.state().enemies[0].hp<1000,id+' damage');}
-const host=harness(),handlers={},packets=[];host.host();host.wire({open:true,bufferSize:0,on:(n,fn)=>handlers[n]=fn,send:m=>packets.push(m)},0);handlers.data({t:'ready',v:11,token:'test-token-000000',config:{character:'scout',starter:'smg'}});host.start('online');host.openShop();const guest=host.state().players[1],owner=host.state().players[0];assert.equal(guest.character,'scout');guest.materials=100;const o=guest.shop[0];handlers.data({t:'shop',...{action:'buy',uid:o.uid,wave:1,revision:guest.revision},id:0});assert.equal(guest.weapons.length,2);assert.equal(owner.weapons.length,1);handlers.data({t:'shop',action:'ready',wave:0,revision:guest.revision});assert.equal(guest.ready,false);assert.equal(packets.at(-1).v,11);
+const host=harness(),handlers={},packets=[];host.host();host.wire({open:true,bufferSize:0,on:(n,fn)=>handlers[n]=fn,send:m=>packets.push(m)},0);handlers.data({t:'ready',v:12,token:'test-token-000000',config:{character:'scout',starter:'smg'}});host.start('online');host.openShop();const guest=host.state().players[1],owner=host.state().players[0];assert.equal(guest.character,'scout');guest.materials=100;const o=guest.shop[0];handlers.data({t:'shop',...{action:'buy',uid:o.uid,wave:1,revision:guest.revision},id:0});assert.equal(guest.weapons.length,2);assert.equal(owner.weapons.length,1);handlers.data({t:'shop',action:'ready',wave:0,revision:guest.revision});assert.equal(guest.ready,false);assert.equal(packets.at(-1).v,12);
 console.log('PASS integration: all weapons, shared loot, per-player wallets, two-player readiness, saved records and authoritative guest purchases.');
 
 const bossTest=harness();bossTest.start('solo');bossTest.bossWave(4);bossTest.simulate(.016);assert.equal(bossTest.state().enemies.length,0);
@@ -53,7 +53,7 @@ console.log('PASS v1.4: 20 augments, item purchases, shield absorption, leech, s
 const reveal=harness();reveal.start('solo');reveal.bossWave(5);reveal.simulate(.01);const warden=reveal.state().enemies.find(e=>e.type==='boss'),pilot=reveal.state().players[0],hpBefore=pilot.hp;reveal.hurt(warden,999999);assert.equal(reveal.state().fractureLeft,3);assert.equal(reveal.state().riftBroken,true);assert.equal(reveal.state().visualTier,0);assert.equal(reveal.state().between,false);const px=pilot.x;reveal.simulate(1);assert.equal(pilot.x,px);assert.equal(pilot.hp,hpBefore);reveal.update(1.5);assert.equal(reveal.state().visualTier,1);assert.equal(reveal.state().between,false);reveal.update(1.6);assert.equal(reveal.state().fractureLeft,0);assert.equal(reveal.state().between,true);assert.equal(reveal.state().visualTier,1);reveal.breakRift();assert.equal(reveal.state().fractureLeft,0);reveal.start('solo');assert.equal(reveal.state().visualTier,0);assert.equal(reveal.state().riftBroken,false);
 const earlyRun=harness();earlyRun.start('solo');earlyRun.breakRift();assert.equal(earlyRun.state().fractureLeft,0);
 const mainPage=fs.readFileSync(__dirname+'/index.html','utf8');assert(mainPage.includes('rift-visuals.js?'));assert(mainPage.indexOf('rift-visuals.js?')<mainPage.indexOf('game.js?'));assert(!mainPage.includes('data-edition'));assert(mainPage.includes('rift-3d.js?'));
-const riftHost=harness(),riftEvents={},riftPackets=[];riftHost.host();riftHost.wire({open:true,bufferSize:0,on:(n,f)=>riftEvents[n]=f,send:m=>riftPackets.push(JSON.parse(JSON.stringify(m)))},0);riftEvents.data({t:'ready',v:11,token:'test-token-000000',config:{starter:'pistol'}});riftHost.start('online');riftHost.bossWave(5);riftHost.simulate(.01);riftHost.hurt(riftHost.state().enemies.find(e=>e.type==='boss'),999999);assert.equal(riftPackets.at(-1).fractureLeft,3);assert.equal(riftPackets.at(-1).riftBroken,true);riftHost.update(1.5);assert.equal(riftPackets.at(-1).visualTier,1);
+const riftHost=harness(),riftEvents={},riftPackets=[];riftHost.host();riftHost.wire({open:true,bufferSize:0,on:(n,f)=>riftEvents[n]=f,send:m=>riftPackets.push(JSON.parse(JSON.stringify(m)))},0);riftEvents.data({t:'ready',v:12,token:'test-token-000000',config:{starter:'pistol'}});riftHost.start('online');riftHost.bossWave(5);riftHost.simulate(.01);riftHost.hurt(riftHost.state().enemies.find(e=>e.type==='boss'),999999);assert.equal(riftPackets.at(-1).fractureLeft,3);assert.equal(riftPackets.at(-1).riftBroken,true);riftHost.update(1.5);assert.equal(riftPackets.at(-1).visualTier,1);
 console.log('PASS Riftbreak: wave-5 trigger, safe combat freeze, timed graphics swap, delayed shop, one-shot reveal, restart reset, main-page renderer loading and replicated phase.');
 
 // Both milestones happen in the same run, including replicated 3D and restart reset.
@@ -91,7 +91,7 @@ scaledGunner.attack=0;scaled.enemyAttack(scaledGunner,build,.01);assert.equal(sc
 build.hp=1;build.damage=1;scaled.spawnVariant('swarm',100,100);assert.equal(scaled.state().enemies.at(-1).hp,(16+5*2)*shared.health);assert.equal(scaled.state().enemyScale.health,4);
 scaled.simulate(.001);const scaledBoss=scaled.state().enemies.find(e=>e.type==='boss');assert.equal(scaledBoss.hp,(1000+5*150)*scaledBoss.power.health*shared.health);
 const duo=harness();duo.start('local');const beforePower=duo.teamPower();duo.state().players[1].damage*=10;assert(duo.teamPower()>beforePower);const injuredPower=duo.teamPower();duo.state().players[1].hp=0;assert.equal(duo.teamPower(),injuredPower);
-const sharedHost=harness(),sharedEvents={},sharedPackets=[];sharedHost.host();sharedHost.wire({open:true,bufferSize:0,on:(n,f)=>sharedEvents[n]=f,send:m=>sharedPackets.push(JSON.parse(JSON.stringify(m)))},0);sharedEvents.data({t:'ready',v:11,token:'test-token-000000',config:{starter:'pistol'}});sharedHost.start('online');
+const sharedHost=harness(),sharedEvents={},sharedPackets=[];sharedHost.host();sharedHost.wire({open:true,bufferSize:0,on:(n,f)=>sharedEvents[n]=f,send:m=>sharedPackets.push(JSON.parse(JSON.stringify(m)))},0);sharedEvents.data({t:'ready',v:12,token:'test-token-000000',config:{starter:'pistol'}});sharedHost.start('online');
 for(const p of sharedHost.state().players){p.weapons=ids.slice(0,6).map(id=>P.weapon(id,4));p.damage*=5;}
 sharedHost.bossWave(5);sharedHost.update(.1);assert.equal(sharedPackets.at(-1).enemyScale.health,4);
 const sharedGuest=harness(),sharedGuestEvents={};sharedGuest.wire({open:true,bufferSize:0,on:(n,f)=>sharedGuestEvents[n]=f,send(){}},0);sharedGuestEvents.data(sharedPackets.at(-1));assert.equal(sharedGuest.state().enemyScale.health,4);
@@ -156,3 +156,20 @@ console.log('PASS skill tree and planet: point economy, connected paths, all fiv
 softVM.window.RRSphere=S;const planetFrame={drawImage(){imageCount++;},fillRect(){},save(){},restore(){},beginPath(){},arc(){},stroke(){},fillText(){}};
 assert(softVM.window.Rift3D.draw(planetFrame,{sphere:true,focus:{x:640,y:360},t:1,reduced:true,players:[{id:0,x:640,y:360,angle:0,color:'#68f7c2',hp:100,maxHp:100,weapons:[1]}],enemies:[],shots:[],enemyShots:[],drops:[],effects:[],particles:[]}));
 console.log('PASS planet renderer: software 3D projects a finite globe mesh and ship; skill unlocks survive host migration.');
+{
+// Continuous screen-relative controls across both poles and repeated orbits.
+const steering=harness();steering.start('solo');steering.bossWave(15);steering.breakRift();steering.update(1.5);steering.update(1.6);
+const pilot=steering.state().players[0];pilot.x=640;pilot.y=5;pilot.cameraAngle=0;
+for(let n=0;n<900;n++){
+ steering.move(pilot,{dx:0,dy:-1,angle:0,fire:false,dash:false},.02);
+ const forward=S.step(pilot,Math.sin(pilot.cameraAngle)*10,-Math.cos(pilot.cameraAngle)*10,1);
+ const visible=S.project(forward,pilot);assert(visible.y<360);assert(Math.abs(visible.x-640)<1e-6);
+ const mapped=S.unproject(visible.x,visible.y,pilot);assert(S.delta(mapped,forward).distance<.001);
+}
+const beams=harness();beams.start('solo');beams.bossWave(15);const bp=beams.state().players[0];bp.x=400;bp.y=300;bp.invuln=0;
+beams.spawnVariant('lancer',100,300);const lancer=beams.state().enemies.at(-1);lancer.attack=0;const beforeBeam=bp.hp;
+beams.enemyAttack(lancer,bp,.01);assert.equal(lancer.windup,1.15);beams.enemyAttack(lancer,bp,.5);assert.equal(bp.hp,beforeBeam);beams.enemyAttack(lancer,bp,.7);assert(lancer.beamLeft>0);assert.equal(beams.state().enemyShots.length,0);
+beams.enemyAttack(lancer,bp,.1);assert(bp.hp<beforeBeam);bp.y=400;const safeHP=bp.hp;beams.enemyAttack(lancer,bp,.1);assert.equal(bp.hp,safeHP);
+console.log('PASS v1.10: stable screen controls across poles, rotated picking, beam warnings harmless and active beam dodgeable.');
+
+}

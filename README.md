@@ -119,3 +119,7 @@ This is an original Brotato-inspired game, not a full port or a copy of its cont
 
 ## Validation
 Run `node tests.cjs` from the repository root. Tests cover economy, leveling, combining, locked offers, capacity, transaction replay, eight-player readiness, host migration, rejoining, skill paths and abilities, spherical movement and collisions, shared loot, character stats, all ten weapon attacks, and guest transaction ownership. Simulated networking tests do not prove Internet reachability on every network.
+
+
+### v1.10 — planet controls and late-wave combat
+The planet is 58% larger on screen. Each ship transports its camera orientation continuously across poles; stick movement stays screen-relative. Wave 8 onward adds rising enemy health and attack pressure (1.8× at wave 15). Wave 10 introduces Lancers with 1.15-second dim aim lines and 0.65-second damaging beams. Wave 12 adds tank/splitter fire and gunner spreads; wave 15 adds sentinel five-shot spreads, boss secondary rings and boss beams. Projectile enemies have no laser aim tells. Upgrade choices fill the shop until all pending picks are spent. Fullscreen enters on tap and hides its button only after success; exiting restores it. Browser support required. All players should refresh to v1.10 before joining.

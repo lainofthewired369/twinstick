@@ -83,7 +83,7 @@ function draw(x,s){
  for(const e of s.enemies){
   if(e.hp<=0)continue;const c=e.hit?'#ffffff':colors[e.type]||colors.drone,h=e.type==='boss'?46:e.type==='tank'?26:18;
   shadow(e.x,e.y,e.r+4);
-  if(e.windup>0){if(e.type==='boss'&&e.pattern%3===1)ring(e.x,e.y,100,1,'#ff90cd');else{const end=pointAt(e.x,e.y,Math.cos(e.aim)*(sphereMode?500:800),Math.sin(e.aim)*(sphereMode?500:800));line(e.x,e.y,end.x,end.y,1,3,'#ff90cd');}}
+  if((e.type==='lancer'||e.beamAttack)&&e.windup>0||e.beamLeft>0){const end=pointAt(e.x,e.y,Math.cos(e.aim)*(sphereMode?600:1000),Math.sin(e.aim)*(sphereMode?600:1000));line(e.x,e.y,end.x,end.y,1,e.beamLeft>0?12:2,e.beamLeft>0?'#fff1ff':'#71345d');}
   const sides=['runner','charger','gunner'].includes(e.type)?3:['tank','sentinel'].includes(e.type)?4:6;
   prism(e.x,e.y,polygon(e.r,sides),2,h,c,e.aim||0,.75);
   prism(e.x,e.y,polygon(e.r*.55,sides),h+2,6,'#20314e',e.aim||0,.6);
@@ -109,8 +109,8 @@ function draw(x,s){
  else if(softwareDraw())backend='software';else return false;
  x.drawImage(hardware?canvas:software,0,0,W,H);
  if(sphereMode){
-  x.save();x.strokeStyle='#7feaff66';x.lineWidth=3;x.beginPath();x.arc(640,360,287,0,TAU);x.stroke();x.strokeStyle='#8ab8ff22';x.lineWidth=8;x.stroke();
-  for(let i=0;i<75;i++){const a=(i*193.17)%1280,b=(i*79.3)%720;if(Math.hypot(a-640,b-360)>300){x.fillStyle=i%3?'#9ac4dc77':'#ffffff';x.fillRect(a,b,i%5?1:2,1);}}x.restore();
+  x.save();x.strokeStyle='#7feaff66';x.lineWidth=3;x.beginPath();x.arc(640,360,452,0,TAU);x.stroke();x.strokeStyle='#8ab8ff22';x.lineWidth=8;x.stroke();
+  for(let i=0;i<75;i++){const a=(i*193.17)%1280,b=(i*79.3)%720;if(Math.hypot(a-640,b-360)>460){x.fillStyle=i%3?'#9ac4dc77':'#ffffff';x.fillRect(a,b,i%5?1:2,1);}}x.restore();
  }
  for(const p of s.players){if(p.hp<=0)continue;const q=sphereMode?window.RRSphere.project(p,focus,20):p;if(q.visible===false)continue;x.fillStyle='#060d19';x.fillRect(q.x-25,q.y+29,50,5);x.fillStyle=p.color;x.fillRect(q.x-25,q.y+29,50*Math.max(0,p.hp)/p.maxHp,5);if(sphereMode){x.font='bold 11px system-ui';x.textAlign='center';x.fillText('P'+(p.id+1),q.x,q.y+47);}}
 

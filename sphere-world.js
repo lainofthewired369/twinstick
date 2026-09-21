@@ -12,7 +12,8 @@ function step(p,vx,vy,dt=1){
  if(Number.isFinite(p.angle)){const axis=cross(q.n,t),look=q.east.map((v,i)=>v*Math.cos(p.angle)+q.south[i]*Math.sin(p.angle)),turn=cross(axis,look),along=dot(axis,look),transport=look.map((v,i)=>v*c+turn[i]*s+axis[i]*along*(1-c));out.angle=Math.atan2(dot(transport,at.south),dot(transport,at.east));}
  return out;
 }
-function project(p,focus,height=0){const q=basis(focus),n=basis(p).n,r=285+height*.45;return {x:640+dot(n,q.east)*r,y:360+dot(n,q.south)*r,z:dot(n,q.n)*r,visible:dot(n,q.n)>0};}
-function unproject(x,y,focus){let a=(x-640)/285,b=(y-360)/285,l=Math.hypot(a,b);if(l>1){a/=l;b/=l;}const z=Math.sqrt(Math.max(0,1-a*a-b*b)),q=basis(focus);return position(q.east.map((v,i)=>v*a+q.south[i]*b+q.n[i]*z));}
+function cameraBasis(focus){const q=basis(focus),a=focus.cameraAngle||0,c=Math.cos(a),s=Math.sin(a);return {n:q.n,east:q.east.map((v,i)=>v*c+q.south[i]*s),south:q.south.map((v,i)=>v*c-q.east[i]*s)};}
+function project(p,focus,height=0){const q=cameraBasis(focus),n=basis(p).n,r=450+height*.45;return {x:640+dot(n,q.east)*r,y:360+dot(n,q.south)*r,z:dot(n,q.n)*r,visible:dot(n,q.n)>0};}
+function unproject(x,y,focus){let a=(x-640)/450,b=(y-360)/450,l=Math.hypot(a,b);if(l>1){a/=l;b/=l;}const z=Math.sqrt(Math.max(0,1-a*a-b*b)),q=cameraBasis(focus);return position(q.east.map((v,i)=>v*a+q.south[i]*b+q.n[i]*z));}
 const api={R,basis,position,delta,step,project,unproject};if(typeof module!=='undefined')module.exports=api;else window.RRSphere=api;
 })();
