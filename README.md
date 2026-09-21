@@ -1,4 +1,4 @@
-# Rift Runners (v1.7)
+# Rift Runners (v1.8)
 Play: https://lainofthewired369.github.io/twinstick/
 
 ## Graphics evolve at waves five and ten
@@ -22,7 +22,7 @@ After each wave, each player receives a survival bonus plus their Harvesting sta
 - Lock an offer to preserve it through rerolls and wave transitions. Reroll costs rise with each use and reset each wave.
 - Passive items apply permanent-for-this-run stat bonuses, multiplied by their rarity tier.
 - Each XP level grants a choice of three stat upgrades at the next shop. Spend all pending choices before Ready.
-- Both players must be Ready before the next wave starts. Cancel Ready to resume shopping. Local co-op uses SWITCH PLAYER to shop for each ship.
+- All connected players must be Ready before the next wave starts. Cancel Ready to resume shopping. Local co-op uses SWITCH PLAYER to shop for each ship.
 
 Stats include damage, attack speed, maximum health, movement speed, armor, regeneration, luck, harvesting and critical chance. Armor reduces incoming damage; critical hits deal double damage. Run equipment, currency, items and levels reset on restart.
 
@@ -30,12 +30,21 @@ Stats include damage, attack speed, maximum health, movement speed, armor, regen
 Ranger is available immediately (+10% damage). Clear wave 3 to unlock Scout (+20% speed, +50% pickup range, -20 HP), wave 5 for Bulwark (+40 HP, +4 armor, -15% speed), and wave 8 for Engineer (+8 harvesting, +20 luck, -10% damage).
 Unlocks, best cleared wave and highest character level persist in this browser's local storage. They do not sync between devices. Clearing browser data resets them. Unlocks are character options, not permanent damage upgrades.
 
-## Two-player online co-op
-Choose your own character and starter before entering ONLINE P2P.
-1. Host leaves the room password blank to generate one, or enters a unique game-only password of 8–64 characters.
-2. Tap HOST ROOM and wait for “Room ready”.
-3. Share the password; your friend enters it and taps JOIN ROOM.
-4. Both players must refresh to v1.7 before connecting.
+## Online co-op: up to eight players
+Choose your own character and starter before opening ONLINE · UP TO 8.
+1. The host enters a unique game-only password (8–64 characters), or leaves it blank to generate one.
+2. Share that password with up to seven friends. They select JOIN ROOM.
+3. The roster shows each player's number, colour and character. The host selects START RUN once everyone has joined.
+4. All players must refresh to v1.8. Local keyboard co-op remains two players.
+
+Every online player has an independent ship, input stream, inventory, upgrades, wallet and shop. The host binds requests to the connection's assigned player ID; a client cannot choose another player's ship. All connected players must mark Ready. Eight colours and numbered ship labels identify the crew. Waves grow with party size above two players; boss health uses 1 + 0.8 × (connected players − 1). Projectile budgets are shared fairly between ships.
+
+### Host migration and rejoining
+The host sends full recovery checkpoints twice a second and immediately after important changes, alongside lighter visual updates. If its link is lost, clients first retry that host, then elect a surviving player in player-number order. Combat pauses while the replacement host restores the last checkpoint and rebuilds the party's connections. Ships, purchases, currency, enemies, projectiles, wave progress, difficulty and graphics tier are restored. There can be a small rewind to the last received checkpoint.
+
+A disconnected guest keeps a reserved slot for the current run. Use JOIN ROOM with the same password in the original browser tab (refreshing that tab is supported) to reclaim it. A per-tab session token identifies the ship, including when the original host returns. A living ship gets three seconds of invulnerability after reconnecting. Disconnected players do not block shop readiness or receive new loot. Unused disconnected reservations expire when the host starts a fresh run. New players cannot enter a run already in progress.
+
+The room remembers peer addresses so returning tabs can find the new host; the new host also attempts to reclaim the password directory. Recovery needs at least one surviving browser with a checkpoint and a working peer connection to the replacement host. It cannot restore a run after everyone closes it, recover a lost per-tab token, or bypass a network that blocks WebRTC. No dedicated TURN relay is configured.
 
 ## Shared exponential enemy difficulty
 At the start of each wave, the host snapshots average team power from equipped weapon DPS, weapon rarity, damage, attack speed, critical chance, projectile count, maximum HP, armor, shields, regeneration and life-steal. Power is normalized to the current wave using the same estimate as boss scaling. Current HP is excluded, and downed teammates still count.
@@ -47,7 +56,7 @@ The multiplier stays fixed throughout the wave: loot affects the next wave, and 
 ## Boss waves
 A Rift Warden arrives after the regular enemies finish spawning on every fifth wave (5, 10, 15…). It cycles through five-shot aimed volleys, 16-shot rings and nine-shot fans, warning before firing. Below half health it fires faster and rings grow to 20 shots. It periodically summons runners and gunners. Defeating it grants a guaranteed weapon crate plus bonus materials and XP; all remaining enemies must also be defeated to open the shop.
 
-Boss scaling snapshots the team's equipped weapon damage, rarity, attack speed, critical chance and projectile count, plus maximum HP, armor, shields, regeneration and life-steal when the boss spawns. This adjusts a wave-scaled baseline, with separate two-player health scaling. Loadout pressure is capped at 4× health, 1.3× attack frequency and 1.35× projectile damage. Warnings stay 0.8 seconds. The snapshot stays fixed for that encounter; it does not change when players take damage or pick up a weapon. The boss HUD shows its health multiplier.
+Boss scaling snapshots the team's equipped weapon damage, rarity, attack speed, critical chance and projectile count, plus maximum HP, armor, shields, regeneration and life-steal when the boss spawns. This adjusts a wave-scaled baseline, with separate party-size health scaling. Loadout pressure is capped at 4× health, 1.3× attack frequency and 1.35× projectile damage. Warnings stay 0.8 seconds. The snapshot stays fixed for that encounter; it does not change when players take damage or pick up a weapon. The boss HUD shows its health multiplier.
 
 ## Afterburn interface and enemies
 Landscape phones use a compact header, safe-area-aware sticks, a compact run HUD, and a split shop with persistent Ready/Reroll controls. Market, Weapons, Augments and Ship Stats have separate tabs; each content area scrolls independently. Portrait remains supported. A dark navy, mint and violet interface replaces the earlier stacked panels.
@@ -82,7 +91,7 @@ Each new shop roll has two weapons and two random augments, respecting locks. Au
 
 Range and blast radius cap at 2.5×, projectile count at 7, speed at 100–480, max HP has a floor of 25, and dash cooldown has a floor of 0.35 seconds. Shields regenerate 15% of maximum per second. Economy bonuses apply on collection; survival/harvest payouts are separate.
 
-Passwords ignore letter case and surrounding whitespace. Anyone with the password can join; never use an account password. Each player controls their own ship, wallet, shop, XP upgrades and inventory. The host validates transactions, including phase, price, capacity, matching tiers and state revisions. Guests send requests, not authoritative stats. The host controls restarting a run.
+Passwords ignore letter case and surrounding whitespace. Anyone with the password can join; never use an account password. Each of up to eight online players controls their own ship, wallet, shop, XP upgrades and inventory. The host validates transactions, including phase, price, capacity, matching tiers and state revisions. Guests send requests, not authoritative stats. The host controls restarting a run.
 
 ## Controls
 Touch: left stick moves; right stick aims and fires. Tap DASH to evade. Landscape recommended; shopping panels scroll on phones.

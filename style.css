@@ -24,3 +24,4 @@ button{min-height:46px;border:1px solid #35506e;border-radius:9px;padding:12px 1
 .shop-tabs button{min-width:0;padding-inline:6px;min-height:44px;font-size:10px}
 .shop-summary,.shop-scroll{touch-action:pan-y;overscroll-behavior:contain}
 #pane-stats #shopStats{font-size:14px;line-height:2;color:var(--text);overflow-wrap:anywhere}
+#crewList{font-size:12px;max-height:76px;overflow-y:auto;line-height:1.7;margin:8px 0;touch-action:pan-y}#startRoom{width:100%;margin-bottom:10px;min-height:44px}.toast{max-width:calc(100% - 24px);width:max-content;text-align:center;font-size:12px;pointer-events:none}#teamReady{overflow-wrap:anywhere}

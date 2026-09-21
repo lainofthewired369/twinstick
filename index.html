@@ -7,7 +7,7 @@
   <meta name="description" content="Rift Runners — a peer-to-peer twin-stick wave survival game.">
   <title>Rift Runners</title>
   <link rel="icon" type="image/svg+xml" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 64 64'%3E%3Crect width='64' height='64' rx='14' fill='%23080b12'/%3E%3Cpath d='M32 7 48 25 39 29 51 48 33 40 22 56 23 37 7 32 25 25z' fill='%2368f7c2'/%3E%3C/svg%3E">
-  <link rel="stylesheet" href="style.css?v=1.7">
+  <link rel="stylesheet" href="style.css?v=1.8">
 </head>
 <body>
   <main>
@@ -33,7 +33,7 @@
           <button class="primary" data-action="solo">PLAY SOLO <span>→</span></button>
           <button data-action="local">LOCAL CO-OP</button>
           <button data-action="armory">CHARACTER & STARTER</button>
-          <button data-action="online">ONLINE P2P</button>
+          <button data-action="online">ONLINE · UP TO 8</button>
         </div>
         <p class="touch-help">Left thumb: move · Right thumb: aim &amp; fire · Tap DASH to evade. Landscape recommended.</p><div class="controls"><span><kbd>WASD</kbd> MOVE</span><span><kbd>MOUSE</kbd> AIM + FIRE</span><span><kbd>SPACE</kbd> DASH</span></div>
       </section>
@@ -66,8 +66,8 @@
       <div id="bossHud" class="hidden"><b id="bossName">RIFT WARDEN</b><progress id="bossBar" value="1" max="1" aria-label="Boss health"></progress></div>
       <section id="lobby" class="panel lobby hidden">
         <button class="back" data-action="back">← BACK</button>
-        <p class="eyebrow">DIRECT LINK</p><h2>Peer-to-peer co-op</h2>
-        <p class="muted">Host a room, share its password, and your friend enters it to join. No code exchange.</p>
+        <p class="eyebrow">DIRECT LINK</p><h2>Up to 8-player co-op</h2>
+        <p class="muted">Share one room password with up to seven friends. The host taps START RUN when everyone is here.</p>
         <label class="room-label" for="roomPassword">Room password</label>
         <input id="roomPassword" autocomplete="off" autocapitalize="none" spellcheck="false" maxlength="64" placeholder="Host generates one, or enter your friend's">
         <div class="role-pick">
@@ -75,8 +75,9 @@
           <button data-action="join">JOIN ROOM</button>
           <button data-action="copy">COPY</button>
         </div>
+        <p id="crewList" class="muted" aria-live="polite"></p><button id="startRoom" class="primary hidden" data-action="start-room">START RUN</button>
         <p id="netStatus" class="status" role="status" aria-live="polite">Choose Host or Join.</p>
-        <p class="muted small-print">Use a game-only password, never an account password. Anyone with it can join. PeerJS provides matchmaking; browsers connect using WebRTC. Some networks may still block the connection.</p>
+        <p class="muted small-print">Use a game-only password, never an account password. Join before the run starts. If disconnected, choose JOIN ROOM with the same password in this tab to reclaim your ship. Host migration is automatic while teammates remain online. PeerJS provides matchmaking; browsers connect using WebRTC. Some networks may still block the connection.</p>
       </section>
 
       <section id="upgrade" class="panel upgrade hidden"><p class="eyebrow">WAVE CLEARED</p><h2>Choose an upgrade</h2><p id="upgradeHint"></p><div id="cards"></div></section>
@@ -84,11 +85,11 @@
       <div id="toast" class="toast hidden"></div>
       <div id="touch" class="touch hidden"><div class="stick" id="moveStick" aria-label="Movement stick"><i></i><span>MOVE</span></div><div class="stick fire" id="aimStick" aria-label="Aim and fire stick"><i></i><span>AIM / FIRE</span></div><button id="dashTouch">DASH</button></div>
     </section>
-    <footer><span id="mode">READY</span><span>v1.7 // RIFT RUNNERS</span></footer>
+    <footer><span id="mode">READY</span><span>v1.8 // RIFT RUNNERS</span></footer>
   </main>
-  <script src="progression.js?v=1.7"></script>
-  <script src="rift-visuals.js?v=1.7"></script>
-  <script src="rift-3d.js?v=1.7"></script>
-  <script src="game.js?v=1.7"></script>
+  <script src="progression.js?v=1.8"></script>
+  <script src="rift-visuals.js?v=1.8"></script>
+  <script src="rift-3d.js?v=1.8"></script>
+  <script src="game.js?v=1.8"></script>
 </body>
 </html>
