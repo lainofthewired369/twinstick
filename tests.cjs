@@ -23,7 +23,7 @@ assert.deepEqual(P.config({character:'bad',starter:'rocket'}),{character:'ranger
 assert.equal(make({character:'bulwark'}).maxHp,140);assert.equal(P.rarity(20,0,()=>0),4);
 console.log('PASS economy: XP, purchases, replay rejection, locks, combining, capacity, items, readiness, loot and character stats.');
 
-function harness(){const elements={},events={},stored={};const el=()=>({textContent:'',classList:{toggle(){}},style:{},addEventListener(){},querySelector:()=>el(),getContext:()=>({}),hasPointerCapture:()=>false,replaceChildren(){},append(){},dataset:{}});const c={crypto:require('node:crypto').webcrypto,sessionStorage:{getItem:k=>stored[k]||null,setItem:(k,v)=>stored[k]=v},window:{RRProgress:P,RRSphere:require('./sphere-world.js')},document:{querySelector:s=>elements[s]??=el(),querySelectorAll:()=>[],addEventListener(){},createElement:el},localStorage:{getItem:k=>stored[k]||null,setItem:(k,v)=>stored[k]=v},performance:{now:()=>1000},requestAnimationFrame(){},addEventListener(){},setTimeout:()=>0,clearTimeout(){}};vm.createContext(c);let src=fs.readFileSync(__dirname+'/game.js','utf8');src=src.replace('requestAnimationFrame(loop);\n})();',`this.test={start,openShop,applyShop,tickAbilities,distance,travel,send,sendState,beginRecovery,retryJoin,promoteHost,finishMigration,roomTest:(p,t,id=0)=>{peer=p;roomToken=t;localId=id;},difficultyScale,teamPower,hostileShot,simulate,update,ui,shoot,collect,wire,breakRift,bossAttack,bossPower,spawnVariant,enemyAttack,damagePlayer,move,hurt,bossWave:n=>{wave=n-1;nextWave();spawnLeft=0;},setBullets:a=>{enemyShots=a;},host:()=>{isHost=true;},setEnemies:a=>{enemies=a;spawnLeft=1;spawnTimer=999;},state:()=>({netStatus:document.querySelector('#netStatus').textContent,players,wave,between,shots,enemies,profile,enemyShots,bossSpawned,visualTier,fractureLeft,riftBroken,enemyScale,localId,isHost,migrating,hostId,roster:[...seats.values()],connections:links.size})};})();`);vm.runInContext(src,c);return c.test;}
+function harness(){const elements={},events={},stored={};const el=()=>({textContent:'',classList:{toggle(){}},style:{},addEventListener(){},querySelector:()=>el(),getContext:()=>({}),hasPointerCapture:()=>false,replaceChildren(){},append(){},dataset:{}});const c={crypto:require('node:crypto').webcrypto,sessionStorage:{getItem:k=>stored[k]||null,setItem:(k,v)=>stored[k]=v},window:{RRProgress:P,RRSphere:require('./sphere-world.js')},document:{querySelector:s=>elements[s]??=el(),querySelectorAll:()=>[],addEventListener(){},createElement:el},localStorage:{getItem:k=>stored[k]||null,setItem:(k,v)=>stored[k]=v},performance:{now:()=>1000},requestAnimationFrame(){},addEventListener(){},setTimeout:()=>0,clearTimeout(){}};vm.createContext(c);let src=fs.readFileSync(__dirname+'/game.js','utf8');src=src.replace('requestAnimationFrame(loop);\n})();',`this.test={rivalThink,restoreState,setTier:v=>{visualTier=v;},start,openShop,applyShop,tickAbilities,distance,travel,send,sendState,beginRecovery,retryJoin,promoteHost,finishMigration,roomTest:(p,t,id=0)=>{peer=p;roomToken=t;localId=id;},difficultyScale,teamPower,hostileShot,simulate,update,ui,shoot,collect,wire,breakRift,bossAttack,bossPower,spawnVariant,enemyAttack,damagePlayer,move,hurt,bossWave:n=>{wave=n-1;nextWave();spawnLeft=0;},setBullets:a=>{enemyShots=a;},host:()=>{isHost=true;},setEnemies:a=>{enemies=a;spawnLeft=1;spawnTimer=999;},state:()=>({netStatus:document.querySelector('#netStatus').textContent,players,wave,between,shots,enemies,profile,enemyShots,bossSpawned,visualTier,fractureLeft,riftBroken,enemyScale,localId,isHost,migrating,hostId,roster:[...seats.values()],connections:links.size})};})();`);vm.runInContext(src,c);return c.test;}
 const t=harness();t.start('local');t.openShop();let state=t.state();const [a,b]=state.players;a.pending=0;b.pending=0;const request=(p,action,extra={})=>({action,wave:t.state().wave,revision:p.revision,...extra});t.applyShop(0,request(a,'ready'));assert(t.state().between);t.applyShop(1,request(b,'ready'));assert.equal(t.state().wave,2);assert.equal(t.state().between,false);
 t.collect({x:0,y:0,kind:'material',value:30});assert.equal(a.materials,b.materials);assert(a.pending>0);t.openShop();t.ui();assert.equal(t.state().profile.best,2);
 for(const id of ids){t.start('solo');const p=t.state().players[0];p.crit=0;p.weapons=[P.weapon(id)];p.angle=0;t.setEnemies([{id:1,x:500,y:360,r:14,hp:1000,speed:0,type:'drone',burn:0,burnDamage:0,hit:0}]);t.shoot(p);for(let i=0;i<20;i++)t.simulate(.016);assert(t.state().enemies[0].hp<1000,id+' damage');}
@@ -191,3 +191,26 @@ console.log('PASS v1.10: stable screen controls across poles, rotated picking, b
  assert.equal(client.state().netStatus,'Run in progress. Only returning players can rejoin.');
  console.log('PASS connection rejection: closing rejected channel preserves the specific host response.');
 }
+
+const rivalTest=harness();rivalTest.start('solo');rivalTest.bossWave(10);rivalTest.simulate(.01);
+let rival=rivalTest.state().enemies.find(e=>e.type==='boss'),rp=rivalTest.state().players[0];
+assert(rival.rival);assert.equal(rival.brain.target,null);assert.equal(rivalTest.state().enemyShots.length,0);
+for(let n=0;n<25;n++)rivalTest.rivalThink(rival,.36);
+assert.equal(rival.tactic,'PRESSURE');assert(rp.rivalHabits.samples>=24);
+const remembered=rp.rivalHabits.samples;
+for(let n=0;n<30;n++){const a=n*.18;rp.x=rival.x+Math.cos(a)*280;rp.y=rival.y+Math.sin(a)*280;rivalTest.rivalThink(rival,.36);}
+assert(Math.abs(rp.rivalHabits.orbit)>.35);assert.equal(rival.tactic,'INTERCEPT');
+const locked=JSON.stringify(rival.brain.target);rp.x+=100;rivalTest.rivalThink(rival,.01);assert.equal(JSON.stringify(rival.brain.target),locked);
+rival.attack=0;rivalTest.bossAttack(rival,rp,.01);assert(rival.windup>0);const lockedAim=rival.aim;rp.y+=100;rivalTest.bossAttack(rival,rp,.1);assert.equal(rival.aim,lockedAim);
+assert(rivalTest.state().enemyShots.length===0);rivalTest.bossAttack(rival,rp,1);assert(rivalTest.state().enemyShots.length>0);
+assert.doesNotThrow(()=>JSON.parse(JSON.stringify(rival.brain)));
+rivalTest.setEnemies([]);rivalTest.bossWave(15);rivalTest.simulate(.01);assert(rp.rivalHabits.samples>remembered);
+rivalTest.start('solo');assert.equal(rivalTest.state().players[0].rivalHabits,undefined);
+console.log('PASS adaptive rival: wave 10, learned camping/circling, delayed decisions, locked aim, shots, serializable memory, later-boss retention and new-run reset.');
+
+const sphereRival=harness();sphereRival.start('solo');sphereRival.setTier(3);sphereRival.bossWave(20);sphereRival.simulate(.01);
+const sr=sphereRival.state().enemies.find(e=>e.rival),sp=sphereRival.state().players[0];sr.x=1275;sp.x=5;
+for(let n=0;n<100;n++){sphereRival.travel(sp,150,80,.05);sphereRival.rivalThink(sr,.05);assert(Number.isFinite(sr.x)&&Number.isFinite(sr.y));}
+const restored=harness();restored.start('solo');restored.restoreState(JSON.parse(JSON.stringify(sphereRival.state())));
+assert.equal(restored.state().players[0].rivalHabits.samples,sp.rivalHabits.samples);assert.equal(restored.state().enemies[0].brain.clock,sr.brain.clock);
+console.log('PASS rival sphere travel and snapshot restoration.');

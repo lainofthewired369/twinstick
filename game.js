@@ -156,11 +156,53 @@ function bossPower(){
 }
 function spawnBoss(){
  bossSpawned=true;const power=bossPower(),hp=(1000+wave*150)*(1+.8*Math.max(0,activePlayers().length-1))*power.health*enemyScale.health;
- enemies.push({id:++enemySerial,type:'boss',power,reinforce:7,x:W/2,y:90,r:42,hp,maxHp:hp,speed:48+Math.min(30,wave),hit:0,burn:0,burnDamage:0,attack:1.8,windup:0,pattern:0,aim:0});
+ enemies.push({id:++enemySerial,type:'boss',rival:wave>=10,brain:wave>=10?{clock:0,scan:0,seen:{},target:null,turn:1,dodge:0}:null,power,reinforce:7,x:W/2,y:90,r:42,hp,maxHp:hp,speed:48+Math.min(30,wave),hit:0,burn:0,burnDamage:0,attack:1.8,windup:0,pattern:0,aim:0});
  burst(W/2,90,'#ff6bdd',40);
 }
 function hostileShot(e,a,speed,damage){if(enemyShots.length>=220)return;const at=offset(e,a,e.r+8);enemyShots.push({x:at.x,y:at.y,vx:Math.cos(at.angle)*speed,vy:Math.sin(at.angle)*speed,r:e.type==='boss'?7:5,life:4.5,damage:damage*enemyScale.damage});}
+// Bounded online habit learning from visible positions only. Brain and player
+// habits are plain snapshot data, so reconnects and host migration preserve them.
+function rivalThink(e,dt){
+ const b=e.brain;b.clock+=dt;b.scan-=dt;b.dodge=Math.max(0,b.dodge-dt);
+ if(b.scan<=0){
+  b.scan=.35;if(b.threat&&b.dodge===0){b.turn*=-1;b.dodge=2.4;}b.threat=shots.some(q=>distance(e,q)<145);const visible=activePlayers().filter(p=>p.hp>0);let best=null,bestScore=-Infinity;
+  for(const p of visible){
+   const old=b.seen[p.id],now={x:p.x,y:p.y,time:b.clock};
+   if(old){
+    const elapsed=Math.max(.01,b.clock-old.time),motion=delta(old,p),speed=motion.distance/elapsed;
+    const h=p.rivalHabits||(p.rivalHabits={samples:0,speed:0,range:280,orbit:0,dashes:0});
+    const radial=delta(e,p),cross=(radial.x*motion.y-radial.y*motion.x)/(Math.max(1,radial.distance*motion.distance));
+    h.samples=Math.min(1000,h.samples+1);h.speed+=.12*(Math.min(400,speed)-h.speed);h.range+=.08*(distance(e,p)-h.range);h.orbit+=.12*(cross-h.orbit);
+    // A sudden visible displacement is a dash observation, never an input read.
+    if(speed>420){h.dashes++;b.dashObserved=b.clock;}
+    const isolation=Math.min(350,...visible.filter(q=>q!==p).map(q=>distance(p,q)));
+    const score=isolation*.5-distance(e,p)*.2+(b.target?.id===p.id?75:0);
+    if(score>bestScore){bestScore=score;best={id:p.id,x:old.x,y:old.y,vx:Math.max(-300,Math.min(300,motion.x/elapsed)),vy:Math.max(-300,Math.min(300,motion.y/elapsed)),habits:{...h}};}
+   }
+   b.seen[p.id]=now;
+  }
+  // Decisions use the previous sample: at least 350 ms reaction delay.
+  b.target=best;
+ }
+ const t=b.target;if(!t)return null;
+ const h=t.habits,confidence=Math.min(1,h.samples/18),a=aimAt(e,t),d=distance(e,t);
+ e.tactic=h.speed<60?'PRESSURE':Math.abs(h.orbit)>.35?'INTERCEPT':h.range<220?'KEEP DISTANCE':'FLANK';
+ if(!e.windup&&!e.beamLeft){
+  const preferred=h.range<220?330:h.speed<60?170:250;
+  const radial=Math.max(-1,Math.min(1,(d-preferred)/100));
+  const strafe=(Math.abs(h.orbit)>.25?-Math.sign(h.orbit):b.turn)*(.6+.25*confidence);
+  // React to an already-visible bullet, with a cooldown rather than invulnerability.
+  const boost=b.dodge>2.15?1.8:1,speed=(115+Math.min(45,wave*2))*boost*(e.slowTime>0?1-e.slow:1);
+  travel(e,(Math.cos(a)*radial-Math.sin(a)*strafe)*speed,(Math.sin(a)*radial+Math.cos(a)*strafe)*speed,dt);
+  if(!onSphere()){e.x=Math.max(e.r,Math.min(W-e.r,e.x));e.y=Math.max(e.r,Math.min(H-e.r,e.y));}
+ }
+ // Limited prediction; locked at windup start, never steers a fired attack.
+ const lead=Math.min(.6,d/340)*confidence;
+ const predicted=offset(t,Math.atan2(t.vy,t.vx),Math.hypot(t.vx,t.vy)*lead);
+ return predicted;
+}
 function bossAttack(e,target,dt){
+ if(e.rival)target=rivalThink(e,dt);
  if(!target)return;
  if(e.beamLeft>0){tickBeam(e,dt);return;}
  e.reinforce-=dt;if(e.reinforce<=0&&enemies.length<65){e.reinforce=e.hp<e.maxHp/2?6:9;for(let n=0;n<2;n++)spawnVariant(n?'gunner':'runner',Math.max(30,Math.min(W-30,e.x+(n?100:-100))),Math.max(30,e.y+70));}
@@ -170,7 +212,7 @@ function bossAttack(e,target,dt){
   for(let n=0;n<count;n++){const angle=phase===1?n*Math.PI*2/count+e.aim:phase===2?e.aim+(n-4)*.13:e.aim+(n-2)*.18;hostileShot(e,angle,speed*(phase===2?.8:1),(16+wave*.8)*e.power.damage);}
   if(wave>=15)for(let n=0;n<12;n++)hostileShot(e,n*Math.PI/6+e.aim,190,(12+wave*.5)*e.power.damage);
   e.pattern++;e.attack=(angry?.85:1.4)/(e.power.attack*enemyScale.attack*latePressure());
- }else{e.attack-=dt;if(e.attack<=0){e.aim=aimAt(e,target);e.beamAttack=wave>=15&&e.pattern%4===3;e.windup=e.beamAttack?1.2:.8;}}
+ }else{e.attack-=dt;if(e.attack<=0){e.aim=aimAt(e,target);if(e.rival&&e.brain.clock-(e.brain.dashObserved??-99)<.8)e.pattern=0;e.beamAttack=wave>=15&&e.pattern%4===3;e.windup=e.beamAttack?1.2:.8;}}
 }
 const enemyTypes={
  drone:{color:'#ff597e',r:14,hp:35,speed:96},tank:{color:'#ffcb68',r:22,hp:95,speed:55},
@@ -285,7 +327,7 @@ function simulate(dt){
   if(e.burn>0){e.burn-=dt;hurt(e,e.burnDamage*dt,e.burnOwner);}if(fractureLeft>0)return;if(e.hp<=0)continue;
   const t=activePlayers().filter(p=>p.hp>0).sort((a,b)=>distance(e,a)-distance(e,b))[0];
   if(e.type==='boss'){e.slowTime=Math.max(0,(e.slowTime||0)-dt);bossAttack(e,t,dt);}else enemyAttack(e,t,dt);
-  if(t){const a=aimAt(e,t),moving=!e.windup&&!e.beamLeft&&!e.charge&&(!['boss','gunner','sentinel','lancer'].includes(e.type)||distance(e,t)>260);if(moving){travel(e,Math.cos(a)*e.speed*(e.slowTime>0?1-e.slow:1),Math.sin(a)*e.speed*(e.slowTime>0?1-e.slow:1),dt);}if(distance(e,t)<e.r+15&&t.dash<t.dashTime-.15&&!t.invuln){damagePlayer(t,24*dt*enemyScale.damage);e.hit=.08;}}
+  if(t){const a=aimAt(e,t),moving=!e.rival&&!e.windup&&!e.beamLeft&&!e.charge&&(!['boss','gunner','sentinel','lancer'].includes(e.type)||distance(e,t)>260);if(moving){travel(e,Math.cos(a)*e.speed*(e.slowTime>0?1-e.slow:1),Math.sin(a)*e.speed*(e.slowTime>0?1-e.slow:1),dt);}if(distance(e,t)<e.r+15&&t.dash<t.dashTime-.15&&!t.invuln){damagePlayer(t,24*dt*enemyScale.damage);e.hit=.08;}}
   e.hit=Math.max(0,e.hit-dt);
  }
  for(const s of shots){
@@ -311,7 +353,7 @@ function ui(){
   $('#wave').textContent=wave;$('#hostiles').textContent=enemies.length+spawnLeft;$('#score').textContent=score;
   $('#mode').textContent=mode==='online'?((isHost?'HOST · ':'')+shipName(localId)+' · '+activePlayers().length+'/8'):mode.toUpperCase();
  }
- const boss=enemies.find(e=>e.type==='boss'&&e.hp>0);$('#bossHud').classList.toggle('hidden',!boss||!running||between);if(boss){$('#bossName').textContent='WARDEN · W'+wave+' · POWER ×'+(boss.power.health*enemyScale.health).toFixed(1)+(boss.windup?' · INCOMING '+(['VOLLEY','RING','FAN'][boss.pattern%3]):'');$('#bossBar').value=boss.hp;$('#bossBar').max=boss.maxHp;}
+ const boss=enemies.find(e=>e.type==='boss'&&e.hp>0);$('#bossHud').classList.toggle('hidden',!boss||!running||between);if(boss){$('#bossName').textContent=(boss.rival?'RIVAL · '+(boss.tactic||'OBSERVING')+' · W':'WARDEN · W')+wave+' · POWER ×'+(boss.power.health*enemyScale.health).toFixed(1)+(boss.windup?' · INCOMING '+(['VOLLEY','RING','FAN'][boss.pattern%3]):'');$('#bossBar').value=boss.hp;$('#bossBar').max=boss.maxHp;}
  $('main').classList.toggle('rift-evolved',visualTier>=1);
  const active=running&&!paused&&!between&&!migrating&&fractureLeft<=0&&overlay==='none';
  $('#touch').classList.toggle('active',active);
