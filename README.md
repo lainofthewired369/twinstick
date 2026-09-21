@@ -1,4 +1,4 @@
-# Rift Runners (v1.6)
+# Rift Runners (v1.6.1)
 Play: https://lainofthewired369.github.io/twinstick/
 
 ## Graphics evolve at waves five and ten
@@ -6,7 +6,7 @@ There is one game at the main address. The old riftbreak.html link redirects the
 
 Defeat the boss on wave 5 to fracture reality. Combat and hostile projectiles pause during a three-second transition. Cracks spread over the arena, the scene changes at the midpoint, and a new visual style remains for the rest of the run: faceted ships with engines and visible weapon mounts, armored enemies, a tiled star-lit arena, projectile trails, layered beams and explosions, crystalline loot, spark streaks, and an upgraded HUD/shop theme. This changes presentation, not combat stats or hitboxes. Remaining reinforcements still need to be cleared before shopping.
 
-The host replicates the transition and visual tier; all players receive it in the main game. At wave 10, defeating the boss triggers a second three-second transition into Layer III: real WebGL geometry with raised tiles, extruded ships and enemies, directional lighting, ground shadows and 3D projectiles. Each milestone triggers once per run and both reset on restart. The fixed oblique camera preserves ground-plane aiming and touch controls. WebGL uses a 960×540 drawing surface for phone performance; devices without WebGL retain enhanced 2D with a visible notice. Reduced-motion settings replace the crack/light effect with a calm title fade and remove decorative rotation and engine pulsing. The visual preview is separate from gameplay and does not affect saves; its original view is schematic, while the upgraded view uses the actual in-game renderer.
+The host replicates the transition and visual tier; all players receive it in the main game. At wave 10, defeating the boss triggers a second three-second transition into Layer III: real WebGL geometry with raised tiles, extruded ships and enemies, directional lighting, ground shadows and 3D projectiles. Each milestone triggers once per run and both reset on restart. The fixed oblique camera preserves ground-plane aiming and touch controls. WebGL uses a 960×540 drawing surface for phone performance; devices without WebGL render the same lit 3D mesh with a software triangle renderer. If neither renderer is available, enhanced 2D remains playable. Reduced-motion settings replace the crack/light effect with a calm title fade and remove decorative rotation and engine pulsing. The visual preview is separate from gameplay and does not affect saves; its original view is schematic, while the upgraded view uses the actual in-game renderer.
 
 ## Build a run
 Choose CHARACTER & STARTER before playing. You begin with one Common weapon, level 1, and no materials. Five starter choices are available; all ten weapon types can appear in shops and supply crates. Up to six weapons fire together.
@@ -35,7 +35,7 @@ Choose your own character and starter before entering ONLINE P2P.
 1. Host leaves the room password blank to generate one, or enters a unique game-only password of 8–64 characters.
 2. Tap HOST ROOM and wait for “Room ready”.
 3. Share the password; your friend enters it and taps JOIN ROOM.
-4. Both players must refresh to v1.6 before connecting.
+4. Both players must refresh to v1.6.1 before connecting.
 
 ## Boss waves
 A Rift Warden arrives after the regular enemies finish spawning on every fifth wave (5, 10, 15…). It cycles through five-shot aimed volleys, 16-shot rings and nine-shot fans, warning before firing. Below half health it fires faster and rings grow to 20 shots. It periodically summons runners and gunners. Defeating it grants a guaranteed weapon crate plus bonus materials and XP; all remaining enemies must also be defeated to open the shop.

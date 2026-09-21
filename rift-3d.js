@@ -3,7 +3,7 @@
 'use strict';
 const W=1280,H=720,TAU=Math.PI*2;
 const colors={drone:'#ff6485',tank:'#ffc877',runner:'#ff9161',gunner:'#b497ff',charger:'#ff536b',splitter:'#bef784',swarm:'#c5ffb0',sentinel:'#78dfff',boss:'#fa8ee8'};
-let canvas,gl,program,buffer,failed=false,lost=false,used=0,data=new Float32Array(262144),palette={};
+let canvas,gl,program,buffer,failed=false,lost=false,used=0,data=new Float32Array(262144),palette={},software,softwareContext,backend='pending',reason='';
 function init(){
  try{
   canvas=document.createElement('canvas');canvas.width=960;canvas.height=540;
@@ -23,7 +23,7 @@ function init(){
   for(const [i,name] of ['position','normal','color'].entries()){const a=gl.getAttribLocation(program,name);gl.enableVertexAttribArray(a);gl.vertexAttribPointer(a,3,gl.FLOAT,false,36,i*12);}
   gl.enable(gl.DEPTH_TEST);gl.depthFunc(gl.LEQUAL);gl.clearColor(.025,.035,.075,1);
   return true;
- }catch(e){failed=true;return false;}
+ }catch(e){reason=e.message;failed=true;return false;}
 }
 function rgb(c){return palette[c]||(palette[c]=[1,3,5].map(i=>parseInt(c.slice(i,i+2),16)/255));}
 function triangle(a,b,c,color){
@@ -44,8 +44,23 @@ function polygon(r,sides=6){return Array.from({length:sides},(_,i)=>[Math.cos(i*
 function line(ax,ay,bx,by,z,width,color){box((ax+bx)/2,(ay+by)/2,Math.hypot(bx-ax,by-ay),width,z,.8,color,Math.atan2(by-ay,bx-ax));}
 function ring(x,y,r,z,color,start=0,arc=TAU){for(let i=0;i<32;i++){const a=start+arc*i/32,b=start+arc*(i+1)/32;line(x+Math.cos(a)*r,y+Math.sin(a)*r,x+Math.cos(b)*r,y+Math.sin(b)*r,z,2,color);}}
 function shadow(x,y,r){prism(x+7,y+9,polygon(r,10),.2,0,'#080d20',0,1);}
+function softwareDraw(){
+ if(!software){software=document.createElement('canvas');software.width=960;software.height=540;softwareContext=software.getContext('2d');}
+ if(!softwareContext)return false;
+ const x=softwareContext,faces=[];x.setTransform(.75,0,0,.75,0,0);x.fillStyle='#060913';x.fillRect(0,0,W,H);
+ for(let i=0;i<used;i+=27)faces.push(i);
+ faces.sort((a,b)=>(data[a+2]+data[a+11]+data[a+20])-(data[b+2]+data[b+11]+data[b+20]));
+ const lightLength=Math.hypot(.5,.8,1);
+ for(const i of faces){
+  const shade=.38+.62*Math.max(0,(-.5*data[i+3]-.8*data[i+4]+data[i+5])/lightLength);
+  x.fillStyle='rgb('+[6,7,8].map(n=>Math.round(data[i+n]*shade*255)).join(',')+')';x.beginPath();
+  for(let n=0;n<3;n++){const j=i+n*9,px=data[j]+data[j+2]*.45,py=data[j+1]-data[j+2]*.65;if(n)x.lineTo(px,py);else x.moveTo(px,py);}
+  x.closePath();x.fill();
+ }
+ return true;
+}
 function draw(x,s){
- if(failed||lost||(!gl&&!init()))return false;
+ const hardware=!failed&&!lost&&(gl||init());
  used=0;
  // Raised arena floor, recessed tiles, pylons and a luminous perimeter.
  box(W/2,H/2,W-18,H-18,-18,17,'#182a49');
@@ -78,11 +93,12 @@ function draw(x,s){
  for(const b of s.enemyShots)prism(b.x,b.y,polygon(b.r,6),4,b.r*1.4,'#ff608d',0,.4);
  for(const f of s.effects){if(f.kind==='beam')line(f.x,f.y,f.bx,f.by,9,4,f.color);else ring(f.x,f.y,f.r,4,f.color,f.kind==='blast'?0:f.angle-f.arc/2,f.kind==='blast'?TAU:f.arc);}
  for(const p of s.particles.slice(-160))box(p.x,p.y,3,3,Math.max(2,p.life*18),3,p.color);
- gl.viewport(0,0,canvas.width,canvas.height);gl.clear(gl.COLOR_BUFFER_BIT|gl.DEPTH_BUFFER_BIT);gl.bindBuffer(gl.ARRAY_BUFFER,buffer);gl.bufferData(gl.ARRAY_BUFFER,data.subarray(0,used),gl.DYNAMIC_DRAW);gl.drawArrays(gl.TRIANGLES,0,used/9);
- x.drawImage(canvas,0,0,W,H);
+ if(hardware){gl.viewport(0,0,canvas.width,canvas.height);gl.clear(gl.COLOR_BUFFER_BIT|gl.DEPTH_BUFFER_BIT);gl.bindBuffer(gl.ARRAY_BUFFER,buffer);gl.bufferData(gl.ARRAY_BUFFER,data.subarray(0,used),gl.DYNAMIC_DRAW);gl.drawArrays(gl.TRIANGLES,0,used/9);backend='WebGL';}
+ else if(softwareDraw())backend='software';else return false;
+ x.drawImage(hardware?canvas:software,0,0,W,H);
  for(const p of s.players){if(p.hp<=0)continue;x.fillStyle='#060d19';x.fillRect(p.x-25,p.y+29,50,5);x.fillStyle=p.color;x.fillRect(p.x-25,p.y+29,50*Math.max(0,p.hp)/p.maxHp,5);}
  if(s.paused){x.fillStyle='#040819bb';x.fillRect(0,0,W,H);x.textAlign='center';x.fillStyle='#e8f7ff';x.font='700 40px system-ui';x.fillText('PAUSED',W/2,H/2);}
  return true;
 }
-window.Rift3D={draw};
+window.Rift3D={draw,get backend(){return backend;},get reason(){return reason;}};
 })();

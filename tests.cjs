@@ -67,3 +67,11 @@ riftHost.update(1.6);assert.equal(riftHost.state().between,true);riftHost.breakR
 riftHost.bossWave(15);riftHost.breakRift();assert.equal(riftHost.state().fractureLeft,0);assert.equal(riftHost.state().visualTier,2);
 riftHost.start('solo');assert.equal(riftHost.state().visualTier,0);riftHost.bossWave(5);riftHost.breakRift();assert.equal(riftHost.state().fractureLeft,3);
 console.log('PASS unified game: wave 5 then wave 10, 3D guest state, no retrigger at wave 15, both transitions reset on restart.');
+
+// A device without WebGL still displays the 3D mesh through Canvas 2D.
+let faceCount=0,imageCount=0;
+const softContext={setTransform(){},fillRect(){},beginPath(){},moveTo(x,y){assert(Number.isFinite(x)&&Number.isFinite(y));},lineTo(x,y){assert(Number.isFinite(x)&&Number.isFinite(y));},closePath(){},fill(){faceCount++;}};
+const softVM={window:{},document:{createElement:()=>({getContext:type=>type==='2d'?softContext:null})}};vm.createContext(softVM);vm.runInContext(fs.readFileSync(__dirname+'/rift-3d.js','utf8'),softVM);
+assert(softVM.window.Rift3D.draw({drawImage(){imageCount++;},fillRect(){}},{t:1,reduced:true,players:[{x:400,y:300,angle:1,color:'#68f7c2',hp:100,maxHp:100,weapons:[1]}],enemies:[{x:800,y:200,type:'boss',r:42,hp:100,aim:1}],shots:[],enemyShots:[],drops:[],effects:[],particles:[]}));
+assert.equal(softVM.window.Rift3D.backend,'software');assert(faceCount>100);assert.equal(imageCount,1);
+console.log('PASS software 3D: no WebGL still renders finite projected geometry and displays the frame.');
