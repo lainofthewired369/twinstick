@@ -40,14 +40,14 @@ function draw(x,s){const {W=1280,H=720,t=0,reduced=false}=s;x.save();background(
  for(const p of s.particles){x.globalAlpha=Math.max(0,Math.min(1,p.life*2));x.strokeStyle=p.color;x.lineWidth=2;x.beginPath();x.moveTo(p.x,p.y);x.lineTo(p.x-p.vx*.025,p.y-p.vy*.025);x.stroke();}x.globalAlpha=1;
  if(s.paused){x.fillStyle='#040819aa';x.fillRect(0,0,W,H);x.textAlign='center';x.fillStyle='#e8f7ff';x.font='700 40px system-ui';x.fillText('PAUSED',W/2,H/2);}x.restore();
 }
-function fracture(x,left,reduced=false,W=1280,H=720){if(left<=0)return;const age=3-left,cx=W*.5,cy=H*.5;x.save();
+function fracture(x,left,reduced=false,W=1280,H=720,target=1){if(left<=0)return;const age=3-left,cx=W*.5,cy=H*.5;x.save();
  if(!reduced){const spread=Math.min(1,age/.85),fade=Math.min(1,left/.7);x.globalAlpha=fade;
   for(let n=0;n<13;n++){const a=n*TAU/13+.08*Math.sin(n*3),length=Math.hypot(W,H)*.7*spread;x.beginPath();x.moveTo(cx,cy);for(let j=1;j<=5;j++){const r=length*j/5,aa=a+Math.sin(n*7+j)*.04;x.lineTo(cx+Math.cos(aa)*r,cy+Math.sin(aa)*r);}x.strokeStyle='#01020be0';x.lineWidth=7;x.stroke();x.strokeStyle='#a5e7ff';x.lineWidth=1.4;x.stroke();
    if(age>.55){const r=80+(n%4)*55,px=cx+Math.cos(a)*r,py=cy+Math.sin(a)*r;polygon(x,[[px,py],[px+Math.cos(a+.4)*70,py+Math.sin(a+.4)*70],[px+Math.cos(a-.2)*110,py+Math.sin(a-.2)*110]],'#c4dcff14','#c2edff66');}
   }
   const light=Math.max(0,1-Math.abs(age-1.4)/.35)*.22;x.globalAlpha=light;x.fillStyle='#d4edff';x.fillRect(0,0,W,H);
  }
- x.globalAlpha=Math.min(1,age*3,left*2);x.fillStyle='#081224ed';x.fillRect(cx-320,cy-48,640,98);x.textAlign='center';x.fillStyle='#b4f7ff';x.font='700 32px system-ui';x.fillText(age<1.4?'REALITY FRACTURED':'RIFT LAYER II // UNLOCKED',cx,cy-4);x.font='13px system-ui';x.fillStyle='#aec3de';x.fillText('SIGNAL RECONSTRUCTED · VISUAL SYSTEMS EVOLVED',cx,cy+24);x.restore();
+ x.globalAlpha=Math.min(1,age*3,left*2);x.fillStyle='#081224ed';x.fillRect(cx-320,cy-48,640,98);x.textAlign='center';x.fillStyle='#b4f7ff';x.font='700 32px system-ui';x.fillText(age<1.4?(target===2?'DIMENSIONS FRACTURED':'REALITY FRACTURED'):(target===2?'LAYER III // ENTERING 3D':'RIFT LAYER II // UNLOCKED'),cx,cy-4);x.font='13px system-ui';x.fillStyle='#aec3de';x.fillText(target===2?'DEPTH RECONSTRUCTED · 3D WORLD ONLINE':'SIGNAL RECONSTRUCTED · VISUAL SYSTEMS EVOLVED',cx,cy+24);x.restore();
 }
 window.RiftVisual={draw,fracture};
 })();
