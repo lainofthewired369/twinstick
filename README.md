@@ -1,4 +1,4 @@
-# Rift Runners — progression edition (v1.3)
+# Rift Runners — progression and bosses (v1.3.1)
 Play: https://lainofthewired369.github.io/twinstick/
 
 ## Build a run
@@ -28,7 +28,10 @@ Choose your own character and starter before entering ONLINE P2P.
 1. Host leaves the room password blank to generate one, or enters a unique game-only password of 8–64 characters.
 2. Tap HOST ROOM and wait for “Room ready”.
 3. Share the password; your friend enters it and taps JOIN ROOM.
-4. Both players must refresh to v1.3 before connecting.
+4. Both players must refresh to v1.3.1 before connecting.
+
+## Boss waves
+A Rift Warden arrives after the regular enemies finish spawning on every fifth wave (5, 10, 15…). It alternates between aimed three-shot volleys and circular bullet patterns, with a visible warning before each attack. It fires faster and adds more radial bullets below half health. Health and projectile speed scale with wave number, with extra health for co-op. Dash through projectiles or move out of their path. Defeating it grants a guaranteed weapon crate plus bonus materials and XP. The shop opens after all enemies are defeated; hostile bullets clear between waves.
 
 Passwords ignore letter case and surrounding whitespace. Anyone with the password can join; never use an account password. Each player controls their own ship, wallet, shop, XP upgrades and inventory. The host validates transactions, including phase, price, capacity, matching tiers and state revisions. Guests send requests, not authoritative stats. The host controls restarting a run.
 
