@@ -7,7 +7,7 @@
   <meta name="description" content="Rift Runners — a peer-to-peer twin-stick wave survival game.">
   <title>Rift Runners</title>
   <link rel="icon" type="image/svg+xml" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 64 64'%3E%3Crect width='64' height='64' rx='14' fill='%23080b12'/%3E%3Cpath d='M32 7 48 25 39 29 51 48 33 40 22 56 23 37 7 32 25 25z' fill='%2368f7c2'/%3E%3C/svg%3E">
-  <link rel="stylesheet" href="style.css?v=1.11">
+  <link rel="stylesheet" href="style.css?v=1.11.1">
 </head>
 <body>
   <main>
@@ -84,7 +84,7 @@
         </div>
         <p id="crewList" class="muted" aria-live="polite"></p><button id="startRoom" class="primary hidden" data-action="start-room">START RUN</button>
         <p id="netStatus" class="status" role="status" aria-live="polite">Choose Host or Join.</p>
-        <p class="muted small-print">Use a game-only password, never an account password. Join before the run starts. If disconnected, choose JOIN ROOM with the same password in this tab to reclaim your ship. Host migration is automatic while teammates remain online. PeerJS provides matchmaking; browsers connect using WebRTC. Some networks may still block the connection.</p>
+        <pre id="netDetails" style="font:12px/1.5 monospace;white-space:pre-wrap;max-height:90px;overflow:auto" aria-live="polite"></pre><p class="muted small-print">Use a game-only password, never an account password. Join before the run starts. If disconnected, choose JOIN ROOM with the same password in this tab to reclaim your ship. Host migration is automatic while teammates remain online. PeerJS provides matchmaking; browsers connect using WebRTC. Some networks may still block the connection.</p>
       </section>
 
       <section id="upgrade" class="panel upgrade hidden"><p class="eyebrow">WAVE CLEARED</p><h2>Choose an upgrade</h2><p id="upgradeHint"></p><div id="cards"></div></section>
@@ -92,16 +92,16 @@
       <div id="toast" class="toast hidden"></div>
       <div id="touch" class="touch hidden"><div class="stick" id="moveStick" aria-label="Movement stick"><i></i><span>MOVE</span></div><div class="stick fire" id="aimStick" aria-label="Aim and fire stick"><i></i><span>AIM / FIRE</span></div><button id="dashTouch">DASH</button></div>
     </section>
-    <footer><span id="mode">READY</span><span>v1.11 // RIFT RUNNERS</span></footer>
+    <footer><span id="mode">READY</span><span>v1.11.1 // RIFT RUNNERS</span></footer>
   </main>
-  <script src="skill-tree.js?v=1.11"></script>
-  <script src="skill-ui.js?v=1.11"></script>
-  <script src="sphere-world.js?v=1.11"></script>
-  <script src="progression.js?v=1.11"></script>
-  <script src="rift-visuals.js?v=1.11"></script>
-  <script src="rift-3d.js?v=1.11"></script>
-  <script src="fullscreen.js?v=1.11"></script>
-  <script src="gamepad.js?v=1.11"></script>
-  <script src="game.js?v=1.11"></script>
+  <script src="skill-tree.js?v=1.11.1"></script>
+  <script src="skill-ui.js?v=1.11.1"></script>
+  <script src="sphere-world.js?v=1.11.1"></script>
+  <script src="progression.js?v=1.11.1"></script>
+  <script src="rift-visuals.js?v=1.11.1"></script>
+  <script src="rift-3d.js?v=1.11.1"></script>
+  <script src="fullscreen.js?v=1.11.1"></script>
+  <script src="gamepad.js?v=1.11.1"></script>
+  <script src="game.js?v=1.11.1"></script>
 </body>
 </html>

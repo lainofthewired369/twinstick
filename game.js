@@ -360,6 +360,8 @@ function saveRoom(){
  if(!roomKey)return;
  try{sessionStorage.setItem('rr-room:'+roomKey,JSON.stringify({token:roomToken,hostPeerId,roster,epoch}));}catch(e){}
 }
+let joinFailure='',netEvents=[];
+function netTrace(s){netEvents.push(s);netEvents=netEvents.slice(-8);const el=$('#netDetails');if(el)el.textContent=netEvents.join('\n');}
 function netStatus(s){$('#netStatus').textContent=s;}
 function recoveryStatus(s){netStatus(s);$('#toast').textContent=s;$('#toast').classList.toggle('hidden',!s);}
 function roomMeta(){return {hostId,hostPeerId:peer?.id||hostPeerId,epoch,roster:[...seats.values()]};}
@@ -438,14 +440,15 @@ function attachPeer(p,token){
  p.on('connection',c=>{if(token!==session){c.close();return;}if(isHost)wire(c,token);else redirect(c);});
  p.on('error',e=>{
   if(token!==session)return;
-  if(['peer-unavailable','webrtc'].includes(e.type)&&!isHost)return;
+  netTrace('Matchmaking error: '+e.type);
+  if(['peer-unavailable','webrtc'].includes(e.type)&&!isHost){joinFailure=e.type==='peer-unavailable'?'Host not registered for this password. Ask the host to keep the room open.':'Peer connection failed while negotiating WebRTC.';return;}
   if((isHost&&roomOpen)||conn?.open){netStatus('Matchmaking interrupted; existing player connections remain active.');return;}
   fail(e.type==='unavailable-id'?'That room exists. Choose JOIN ROOM to rejoin, or use a new password.':'Connection failed. Retry hosting or joining.');
  });
  p.on('disconnected',()=>{if(token===session&&!p.destroyed){try{p.reconnect();}catch(e){netStatus('Matchmaking disconnected; existing player connections remain active.');}}});
 }
 async function connect(host){
- cleanup();const token=session;isHost=host;localId=host?0:-1;mode='online';show('lobby');
+ cleanup();joinFailure='';netEvents=[];netTrace('Connecting to matchmaking');const token=session;isHost=host;localId=host?0:-1;mode='online';show('lobby');
  let password=$('#roomPassword').value.trim().toLowerCase();if(host&&!password)password=randomPassword();
  if(password.length<8||password.length>64){netStatus('Use a game-only password of 8–64 characters. Host can generate one if blank.');return;}
  $('#roomPassword').value=password;netStatus('Contacting matchmaking…');
@@ -454,10 +457,10 @@ async function connect(host){
   await loadPeer();const id=await roomId(password);if(token!==session)return;roomKey=id;
   let saved=null;try{saved=JSON.parse(sessionStorage.getItem('rr-room:'+id)||'null');}catch(e){}
   roomToken=!host&&saved?.token?saved.token:randomPassword()+randomPassword();
-  const p=new Peer(host?id:undefined,{debug:0});peer=p;attachPeer(p,token);
+  const p=new Peer(host?id:undefined,{debug:1});peer=p;attachPeer(p,token);
   p.on('open',()=>{
    if(token!==session)return;clearTimeout(netTimer);
-   if(host){hostPeerId=p.id;roomOpen=true;seats.set(0,{id:0,token:roomToken,config:P.config(configs[0]),peerId:p.id,connected:true});broadcastLobby();}
+   netTrace('Matchmaking connected');if(host){hostPeerId=p.id;roomOpen=true;seats.set(0,{id:0,token:roomToken,config:P.config(configs[0]),peerId:p.id,connected:true});broadcastLobby();}
    else {
     joinTargets=[...new Set([saved?.hostPeerId,id,...(saved?.roster||[]).map(s=>s.peerId)].filter(Boolean))];
     netStatus('Finding the room…');tryJoin();
@@ -474,12 +477,12 @@ function tryJoin(){
   hostPeerId=candidate.peerId;
  }else{
   hostPeerId=joinTargets.shift();
-  if(!hostPeerId){netStatus('Room unreachable. Check the password and retry JOIN ROOM.');return;}
+  if(!hostPeerId){netStatus(joinFailure||'Host connection timed out after 20 seconds. Check the host is online; the network may be blocking WebRTC.');return;}
  }
  if(triedPeers.has(hostPeerId)){tryJoin();return;}triedPeers.add(hostPeerId);
  if(!peer)return;
  wire(peer.connect(hostPeerId,{reliable:true,serialization:'json',metadata:{v:12}}),session);
- netTimer=setTimeout(()=>{if(!isHost)retryJoin();},recovering?8000:6000);
+ netTimer=setTimeout(()=>{if(!isHost)retryJoin();},recovering?8000:20000);
 }
 function retryJoin(){if(isHost)return;tryJoin();}
 function beginRecovery(){
@@ -508,7 +511,7 @@ function finishMigration(){
 }
 function claimDirectory(token,attempt=0){
  if(!peer||!window.Peer||!roomKey||peer.id===roomKey||attempt>=12||token!==session||!isHost)return;
- const b=new Peer(roomKey,{debug:0});beacon=b;
+ const b=new Peer(roomKey,{debug:1});beacon=b;
  b.on('connection',redirect);
  b.on('error',()=>{b.destroy();if(token===session&&isHost)setTimeout(()=>claimDirectory(token,attempt+1),5000);});
 }
@@ -518,12 +521,15 @@ function rejectConnection(c,reason){
 }
 function wire(c,token){
  const accepting=isHost;let id=-1,link=null,handshakeTimer=null;
+ netTrace(accepting?'Incoming connection offer':'Opening peer connection');
+ const pc=c.peerConnection;
+ if(pc?.addEventListener){pc.addEventListener('iceconnectionstatechange',()=>{if(token===session){netTrace('Network path: '+pc.iceConnectionState);if(pc.iceConnectionState==='failed')joinFailure='WebRTC network path failed. Try another network; a relay connection may be needed.';}});pc.addEventListener('connectionstatechange',()=>{if(token===session)netTrace('Peer transport: '+pc.connectionState);});}
  if(accepting){
   // The production host creates this seat on open; this also supports offline harnesses.
   if(!seats.has(localId)){roomToken||=randomPassword()+randomPassword();seats.set(localId,{id:localId,token:roomToken,config:P.config(configs[0]),peerId:peer?.id||'host',connected:true});}
-  handshakeTimer=setTimeout(()=>c.close?.(),20000);
+  handshakeTimer=setTimeout(()=>c.close?.(),30000);
  }else conn=c;
- c.on('open',()=>{if(token!==session)return;lastPacket=performance.now();if(!accepting)sendTo(c,{t:'ready',v:12,token:roomToken,config:P.config(configs[0])});});
+ c.on('open',()=>{if(token!==session)return;netTrace('Data channel open');lastPacket=performance.now();if(!accepting)sendTo(c,{t:'ready',v:12,token:roomToken,config:P.config(configs[0])});});
  c.on('data',m=>{
   if(token!==session||!m||typeof m!=='object')return;
   if(accepting){
@@ -579,7 +585,7 @@ function wire(c,token){
   if(accepting){if(link)dropGuest(id,link);}
   else if(conn===c&&!isHost){if(recovering)retryJoin();else if(roomStarted||roster.length)beginRecovery();else{conn=null;netStatus('Connection lost. Tap JOIN ROOM to retry.');}}
  };
- c.on('close',ended);c.on('error',ended);
+ c.on('close',ended);c.on('error',e=>{netTrace('Data channel error: '+(e.type||e.message||'unknown'));ended();});
 }
 function pointerStick(name,selector){
  const el=$(selector),s=touch[name];
