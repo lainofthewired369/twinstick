@@ -30,7 +30,19 @@ function aimAt(a,b){const d=delta(a,b);return Math.atan2(d.y,d.x);}
 function offset(p,a,d){return onSphere()?Sphere.step({...p,angle:a},Math.cos(a)*d,Math.sin(a)*d):{x:p.x+Math.cos(a)*d,y:p.y+Math.sin(a)*d,angle:a};}
 function travel(p,vx,vy,dt,projectile=false){if(onSphere()){const enemyAim=Number.isFinite(p.aim)&&!Number.isFinite(p.angle),n=Sphere.step(enemyAim?{...p,angle:p.aim}:p,vx,vy,dt);if(p.id!==undefined&&p.weapons){p.cameraAngle=Sphere.step({...p,angle:p.cameraAngle||0},vx,vy,dt).angle;}p.x=n.x;p.y=n.y;if(projectile){p.vx=n.vx;p.vy=n.vy;}else if(Number.isFinite(n.angle)){if(enemyAim)p.aim=n.angle;else p.angle=n.angle;}}else{p.x+=vx*dt;p.y+=vy*dt;}}
 function cameraFocus(){return players[localId]?.hp>0?players[localId]:activePlayers().find(p=>p.hp>0)||players[localId]||{x:640,y:360};}
+function controlAngle(p){if(!onSphere())return 0;if(mode==='local'&&p.id!==localId){const focus=cameraFocus(),d=Sphere.delta(focus,p);return Sphere.step({...focus,angle:focus.cameraAngle||0},d.x,d.y,1).angle||0;}return p.cameraAngle||0;}
 let treePreview=null;
+let inputDevice='';
+function inputMode(device){if(inputDevice===device)return;inputDevice=device;document.documentElement?.setAttribute('data-input',device);const hint=$('#inputHint');if(hint)hint.textContent=device==='gamepad'?'CONTROLLER · Left stick move · Right stick aim/fire · RT fire · A / LB dash · Start pause · D-pad + A menus':device==='touch'?'TOUCH · Left thumb move · Right thumb aim/fire · DASH to evade':'KEYBOARD · WASD move · Mouse aim/fire · Space / Shift dash · Esc pause';}
+function padNavigate(action){
+ if(action==='back'){const back=$('#'+overlay+' .back')||$('#'+overlay+' [data-action="skill-close"]');back?.click();return;}
+ const buttons=[...document.querySelectorAll('button,input')].filter(b=>!b.disabled&&!b.hidden&&b.getClientRects().length);
+ if(!buttons.length)return;let current=buttons.indexOf(document.activeElement);
+ if(action==='confirm'){(buttons[current]||buttons[0]).click();return;}
+ current=(current+(action==='left'||action==='up'?-1:1)+buttons.length)%buttons.length;buttons[current].focus();buttons[current].scrollIntoView({block:'nearest',inline:'nearest'});
+}
+function pollPads(){window.RRPad?.frame({playing:running&&!paused&&!between&&fractureLeft<=0&&!migrating&&overlay==='none',local:mode==='local',onPause:()=>$('#pauseBtn').onclick(),onNavigate:padNavigate,onActive:()=>inputMode('gamepad')},performance.now());}
+
 function openTree(preview=false){treePreview=preview?player(0,shipColors[0],0):null;show('skills');window.RRSkillUI?.open(treePreview||players[mode==='local'?shopPlayer:localId],id=>shopAction('skill',null,id));}
 const blank=()=>({dx:0,dy:0,angle:0,fire:false,dash:0});
 let enemySerial=0,effects=[],armoryPlayer=0,enemyShots=[],bossSpawned=false,shopTab='offers';
@@ -234,13 +246,18 @@ function localInput(second=false){
  if(second){
   dx=Number(!!keys.ArrowRight)-Number(!!keys.ArrowLeft);dy=Number(!!keys.ArrowDown)-Number(!!keys.ArrowUp);
   const ax=Number(!!keys.Numpad6)-Number(!!keys.Numpad4),ay=Number(!!keys.Numpad2)-Number(!!keys.Numpad8);
-  if(ax||ay){a=Math.atan2(ay,ax)+(onSphere()?(p.cameraAngle||0):0);fire=true;}dash=dash2;dash2=false;
+  if(ax||ay){a=Math.atan2(ay,ax)+controlAngle(p);fire=true;}dash=dash2;dash2=false;
  }else{
   dx=touch.move.id!==null?touch.move.x:Number(!!keys.KeyD)-Number(!!keys.KeyA);
   dy=touch.move.id!==null?touch.move.y:Number(!!keys.KeyS)-Number(!!keys.KeyW);
-  if(touch.aim.id!==null){if(Math.hypot(touch.aim.x,touch.aim.y)>.15){a=Math.atan2(touch.aim.y,touch.aim.x)+(onSphere()?(p.cameraAngle||0):0);fire=true;}}
-  else if(mouse.active){a=aimAt(p,mouse);fire=mouse.down;}
+  if(touch.aim.id!==null){if(Math.hypot(touch.aim.x,touch.aim.y)>.15){a=Math.atan2(touch.aim.y,touch.aim.x)+controlAngle(p);fire=true;}}
+  else if(mouse.active){const target=onSphere()?Sphere.unproject(mouse.screenX??640,mouse.screenY??360,cameraFocus()):mouse;a=aimAt(p,target);fire=mouse.down;}
   dash=dashPending;dashPending=false;
+ }
+ const pad=window.RRPad?.read(second,mode==='local');
+ if(pad&&(inputDevice==='gamepad'||second)){
+  dx=pad.dx;dy=pad.dy;fire=pad.fire;dash=pad.dash;a=p.angle;
+  if(Math.hypot(pad.ax,pad.ay)>.05)a=Math.atan2(pad.ay,pad.ax)+controlAngle(p);
  }
  const l=Math.max(1,Math.hypot(dx,dy));return{dx:dx/l,dy:dy/l,angle:a,fire,dash};
 }
@@ -248,7 +265,7 @@ function move(p,i,dt){
  if(p.hp<=0)return;
  p.hp=Math.min(p.maxHp,p.hp+p.regen*dt);p.invuln=Math.max(0,(p.invuln||0)-dt);p.shieldDelay=Math.max(0,p.shieldDelay-dt);if(!p.shieldDelay)p.shield=Math.min(p.maxShield,p.shield+p.maxShield*.15*dt);
  for(const s of p.weapons){s.cool=Math.max(0,s.cool-dt);s.spin=i.fire?Math.min(1,s.spin+dt):0;}p.dash=Math.max(0,p.dash-dt);p.angle=i.angle;
- const frame=onSphere()?(p.cameraAngle||0):0,c=Math.cos(frame),s=Math.sin(frame),mx=i.dx*c-i.dy*s,my=i.dx*s+i.dy*c;
+ const frame=controlAngle(p),c=Math.cos(frame),s=Math.sin(frame),mx=i.dx*c-i.dy*s,my=i.dx*s+i.dy*c;
  travel(p,mx*p.speed,my*p.speed,dt);
  if(i.dash&&p.dash===0){let dx=mx,dy=my;if(Math.hypot(dx,dy)<.1){dx=Math.cos(p.angle);dy=Math.sin(p.angle);}const l=Math.hypot(dx,dy);travel(p,dx/l*110,dy/l*110,1);p.dash=p.dashTime;if(p.abilities?.nova){effect({kind:'blast',x:p.x,y:p.y,r:110,color:p.color});for(const e of enemies)if(distance(p,e)<110+e.r)hurt(e,p.damage*2,p.id);}burst(p.x,p.y,p.color,14);}
  if(!onSphere()){p.x=Math.max(18,Math.min(W-18,p.x));p.y=Math.max(18,Math.min(H-18,p.y));}if(i.fire)shoot(p);tickAbilities(p,dt);
@@ -570,29 +587,32 @@ function pointerStick(name,selector){
   const r=el.getBoundingClientRect(),radius=r.width*.35,dx=e.clientX-r.left-r.width/2,dy=e.clientY-r.top-r.height/2,l=Math.max(radius,Math.hypot(dx,dy));
   s.x=dx/l;s.y=dy/l;el.querySelector('i').style.transform='translate('+s.x*radius+'px,'+s.y*radius+'px)';
  };
- el.addEventListener('pointerdown',e=>{if(s.id!==null)return;e.preventDefault();s.id=e.pointerId;el.setPointerCapture(e.pointerId);update(e);});
+ el.addEventListener('pointerdown',e=>{if(s.id!==null)return;inputMode('touch');e.preventDefault();s.id=e.pointerId;el.setPointerCapture(e.pointerId);update(e);});
  el.addEventListener('pointermove',e=>{if(s.id===e.pointerId){e.preventDefault();update(e);}});
  const end=e=>{if(s.id!==e.pointerId)return;s.id=null;s.x=s.y=0;el.querySelector('i').style.transform='';};
  ['pointerup','pointercancel','lostpointercapture'].forEach(n=>el.addEventListener(n,end));
 }
 pointerStick('move','#moveStick');pointerStick('aim','#aimStick');
 $('#dashTouch').addEventListener('pointerdown',e=>{e.preventDefault();dashPending=true;});
+document.addEventListener('pointerdown',e=>{if(e.pointerType==='touch')inputMode('touch');else if(e.pointerType==='mouse')inputMode('keyboard');});
 addEventListener('blur',resetInput);
 document.addEventListener('visibilitychange',()=>{resetInput();if(document.hidden&&running&&(mode!=='online'||isHost)){paused=true;sendState();}});
 addEventListener('keydown',e=>{
- if(e.target.matches('input,textarea,button'))return;
+ if(e.target.matches('input,textarea,select,[contenteditable]'))return;
+ inputMode('keyboard');if(!e.repeat&&(e.code==='Escape'||e.code==='KeyP')){$('#pauseBtn').onclick();return;}
  if(['Space','ArrowUp','ArrowDown','ArrowLeft','ArrowRight'].includes(e.code))e.preventDefault();
- keys[e.code]=true;if(!e.repeat&&e.code==='Space')dashPending=true;if(!e.repeat&&e.code==='Enter')dash2=true;
+ if(e.code==='Enter'&&running&&!between)e.preventDefault();
+ keys[e.code]=true;if(!e.repeat&&['Space','ShiftLeft','ShiftRight'].includes(e.code))dashPending=true;if(!e.repeat&&e.code==='Enter')dash2=true;
 });
 addEventListener('keyup',e=>{keys[e.code]=false;});
 function mousePos(e){
  const r=C.getBoundingClientRect(),scale=Math.min(r.width/W,r.height/H),ox=(r.width-W*scale)/2,oy=(r.height-H*scale)/2;
- mouse.x=(e.clientX-r.left-ox)/scale;mouse.y=(e.clientY-r.top-oy)/scale;if(onSphere()){const at=Sphere.unproject(mouse.x,mouse.y,cameraFocus());mouse.x=at.x;mouse.y=at.y;}mouse.active=true;
+ mouse.x=mouse.screenX=(e.clientX-r.left-ox)/scale;mouse.y=mouse.screenY=(e.clientY-r.top-oy)/scale;mouse.active=true;inputMode('keyboard');
 }
 C.addEventListener('pointermove',e=>{if(e.pointerType==='mouse')mousePos(e);});
 C.addEventListener('pointerdown',e=>{if(e.pointerType==='mouse'&&e.button===0){mousePos(e);mouse.down=true;}});
 addEventListener('pointerup',e=>{if(e.pointerType==='mouse')mouse.down=false;});
-$('#pauseBtn').onclick=()=>{if(fractureLeft>0||migrating)return;if(mode==='online'&&!isHost)send({t:'pause'});else {paused=!paused;resetInput();sendState();}};
+$('#pauseBtn').onclick=()=>{if(!running||between||fractureLeft>0||migrating)return;if(mode==='online'&&!isHost)send({t:'pause'});else {paused=!paused;resetInput();sendState();}};
 $$('[data-action]').forEach(b=>b.onclick=async()=>{
  const a=b.dataset.action;
  if(a==='solo'||a==='local'){cleanup();localId=0;start(a);}
@@ -610,6 +630,6 @@ $('#reroll').onclick=()=>shopAction('reroll');
 $('#readyShop').onclick=()=>shopAction('ready');
 $('#switchShop').onclick=()=>{shopPlayer=1-shopPlayer;lastUI='';ui();};
 for(const tab of ['offers','inventory','items','stats'])$('#tab-'+tab).onclick=()=>{shopTab=tab;lastUI='';ui();};
-function loop(t){const dt=Math.min(.033,(t-last)/1000||0);last=t;update(dt);draw();requestAnimationFrame(loop);}
+function loop(t){pollPads();const dt=Math.min(.033,(t-last)/1000||0);last=t;update(dt);draw();requestAnimationFrame(loop);}
 requestAnimationFrame(loop);
 })();

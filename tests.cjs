@@ -173,3 +173,14 @@ beams.enemyAttack(lancer,bp,.1);assert(bp.hp<beforeBeam);bp.y=400;const safeHP=b
 console.log('PASS v1.10: stable screen controls across poles, rotated picking, beam warnings harmless and active beam dodgeable.');
 
 }
+
+{
+ const padVM={window:{},navigator:{getGamepads:()=>devices}};let devices=[];vm.createContext(padVM);vm.runInContext(fs.readFileSync(__dirname+'/gamepad.js','utf8'),padVM);
+ const padAPI=padVM.window.RRPad,controller={index:0,connected:true,mapping:'standard',axes:[.1,0,0,0],buttons:Array.from({length:17},()=>({pressed:false,value:0}))};devices=[controller];let pauses=0,nav=[];
+ const context={playing:true,onActive(){},onPause(){pauses++;},onNavigate:a=>nav.push(a)};
+ padAPI.frame(context,0);assert.equal(padAPI.read().dx,0);controller.axes=[1,1,1,0];controller.buttons[4].pressed=true;padAPI.frame(context,20);const input=padAPI.read();assert(Math.abs(Math.hypot(input.dx,input.dy)-1)<1e-8);assert(input.fire&&input.dash);assert(!padAPI.read().dash);
+ padAPI.frame(context,40);assert(!padAPI.read().dash);controller.buttons[9].pressed=true;padAPI.frame(context,60);padAPI.frame(context,80);assert.equal(pauses,1);
+ assert.equal(padAPI.read(false,true),null);assert(padAPI.read(true,true));devices.push({...controller,index:1});padAPI.frame(context,100);assert(padAPI.read(false,true));assert(padAPI.read(true,true));
+ devices=[controller];context.playing=false;controller.buttons[0].pressed=true;padAPI.frame(context,120);assert(nav.includes('confirm'));assert(!padAPI.read().dash);devices=[];padAPI.frame(context,140);assert.equal(padAPI.read(),null);
+ console.log('PASS v1.11 controllers: radial deadzone, analog normalization, firing, dash edges, pause edges, local assignment, menu confirm and disconnect.');
+}

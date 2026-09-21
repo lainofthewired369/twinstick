@@ -54,3 +54,10 @@ button{min-height:46px;border:1px solid #35506e;border-radius:9px;padding:12px 1
  .shop.level-pending .skill-entry{float:none;width:100%}
  #fullscreenBtn{font-size:9px}.hud{gap:4px}
 }
+
+#inputHint{font-size:13px;line-height:1.6;color:#b9d6e8;grid-column:1/-1;margin:8px 0}
+.menu .controls{display:none}
+html[data-input="gamepad"] .touch,html[data-input="keyboard"] .touch{display:none!important}
+html[data-input="gamepad"] button:focus{outline:3px solid #fff;outline-offset:3px;box-shadow:0 0 20px #7dffd066}
+@media(any-pointer:coarse){html:not([data-input="gamepad"]):not([data-input="keyboard"]) #inputHint{display:none}}
+@media(orientation:landscape) and (max-height:540px){#inputHint{font-size:11px;margin:5px 0}}
