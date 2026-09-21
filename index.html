@@ -2,12 +2,12 @@
 <html lang="en">
 <head>
   <meta charset="utf-8">
-  <meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover,user-scalable=no">
+  <meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
   <meta name="theme-color" content="#080b12">
   <meta name="description" content="Rift Runners — a peer-to-peer twin-stick wave survival game.">
   <title>Rift Runners</title>
   <link rel="icon" type="image/svg+xml" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 64 64'%3E%3Crect width='64' height='64' rx='14' fill='%23080b12'/%3E%3Cpath d='M32 7 48 25 39 29 51 48 33 40 22 56 23 37 7 32 25 25z' fill='%2368f7c2'/%3E%3C/svg%3E">
-  <link rel="stylesheet" href="style.css">
+  <link rel="stylesheet" href="style.css?v=1.1">
 </head>
 <body>
   <main>
@@ -34,39 +34,31 @@
           <button data-action="local">LOCAL CO-OP</button>
           <button data-action="online">ONLINE P2P</button>
         </div>
-        <div class="controls"><span><kbd>WASD</kbd> MOVE</span><span><kbd>MOUSE</kbd> AIM + FIRE</span><span><kbd>SPACE</kbd> DASH</span></div>
+        <p class="touch-help">Left thumb: move · Right thumb: aim &amp; fire · Tap DASH to evade. Landscape recommended.</p><div class="controls"><span><kbd>WASD</kbd> MOVE</span><span><kbd>MOUSE</kbd> AIM + FIRE</span><span><kbd>SPACE</kbd> DASH</span></div>
       </section>
 
       <section id="lobby" class="panel lobby hidden">
         <button class="back" data-action="back">← BACK</button>
         <p class="eyebrow">DIRECT LINK</p><h2>Peer-to-peer co-op</h2>
-        <p class="muted">Exchange two encrypted connection codes with your teammate. Send codes through any chat.</p>
-        <div id="rolePick" class="role-pick">
-          <button class="primary" data-action="host">HOST A RUN</button>
-          <button data-action="join">JOIN A RUN</button>
+        <p class="muted">Host a room, share its password, and your friend enters it to join. No code exchange.</p>
+        <label class="room-label" for="roomPassword">Room password</label>
+        <input id="roomPassword" autocomplete="off" autocapitalize="none" spellcheck="false" maxlength="64" placeholder="Host generates one, or enter your friend's">
+        <div class="role-pick">
+          <button class="primary" data-action="host">HOST ROOM</button>
+          <button data-action="join">JOIN ROOM</button>
+          <button data-action="copy">COPY</button>
         </div>
-        <div id="hostFlow" class="flow hidden">
-          <label>1. Send this offer to your teammate<textarea id="offerOut" readonly placeholder="Generating secure offer…"></textarea></label>
-          <button class="small" data-copy="offerOut">COPY OFFER</button>
-          <label>2. Paste their answer here<textarea id="answerIn" placeholder="Paste answer code…"></textarea></label>
-          <button class="primary" data-action="acceptAnswer">CONNECT</button>
-        </div>
-        <div id="joinFlow" class="flow hidden">
-          <label>1. Paste the host's offer<textarea id="offerIn" placeholder="Paste offer code…"></textarea></label>
-          <button data-action="makeAnswer">CREATE ANSWER</button>
-          <label>2. Send this answer back<textarea id="answerOut" readonly placeholder="Your answer appears here…"></textarea></label>
-          <button class="small" data-copy="answerOut">COPY ANSWER</button>
-        </div>
-        <p id="netStatus" class="status">Not connected</p>
+        <p id="netStatus" class="status" role="status" aria-live="polite">Choose Host or Join.</p>
+        <p class="muted small-print">Use a game-only password, never an account password. Anyone with it can join. PeerJS provides matchmaking; browsers connect using WebRTC. Some networks may still block the connection.</p>
       </section>
 
-      <section id="upgrade" class="panel upgrade hidden"><p class="eyebrow">WAVE CLEARED</p><h2>Choose an upgrade</h2><div id="cards"></div></section>
+      <section id="upgrade" class="panel upgrade hidden"><p class="eyebrow">WAVE CLEARED</p><h2>Choose an upgrade</h2><p id="upgradeHint"></p><div id="cards"></div></section>
       <section id="gameover" class="panel gameover hidden"><p class="eyebrow">SIGNAL LOST</p><h2>Run over</h2><p id="finalScore"></p><button class="primary" data-action="restart">RUN IT BACK</button><button data-action="back">MAIN MENU</button></section>
       <div id="toast" class="toast hidden"></div>
-      <div id="touch" class="touch hidden"><div class="stick" id="moveStick"><i></i></div><div class="stick fire" id="aimStick"><i></i></div><button id="dashTouch">DASH</button></div>
+      <div id="touch" class="touch hidden"><div class="stick" id="moveStick" aria-label="Movement stick"><i></i><span>MOVE</span></div><div class="stick fire" id="aimStick" aria-label="Aim and fire stick"><i></i><span>AIM / FIRE</span></div><button id="dashTouch">DASH</button></div>
     </section>
-    <footer><span id="mode">READY</span><span>v1.0 // WEBRTC DIRECT LINK</span></footer>
+    <footer><span id="mode">READY</span><span>v1.1 // TOUCH + ROOM PASSWORD</span></footer>
   </main>
-  <script src="game.js"></script>
+  <script src="game.js?v=1.1"></script>
 </body>
 </html>
