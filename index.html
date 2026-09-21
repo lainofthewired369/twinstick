@@ -7,7 +7,7 @@
   <meta name="description" content="Rift Runners — a peer-to-peer twin-stick wave survival game.">
   <title>Rift Runners</title>
   <link rel="icon" type="image/svg+xml" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 64 64'%3E%3Crect width='64' height='64' rx='14' fill='%23080b12'/%3E%3Cpath d='M32 7 48 25 39 29 51 48 33 40 22 56 23 37 7 32 25 25z' fill='%2368f7c2'/%3E%3C/svg%3E">
-  <link rel="stylesheet" href="style.css?v=1.2">
+  <link rel="stylesheet" href="style.css?v=1.3">
 </head>
 <body>
   <main>
@@ -32,7 +32,7 @@
         <div class="actions">
           <button class="primary" data-action="solo">PLAY SOLO <span>→</span></button>
           <button data-action="local">LOCAL CO-OP</button>
-          <button data-action="armory">ARMORY · 10 WEAPONS</button>
+          <button data-action="armory">CHARACTER & STARTER</button>
           <button data-action="online">ONLINE P2P</button>
         </div>
         <p class="touch-help">Left thumb: move · Right thumb: aim &amp; fire · Tap DASH to evade. Landscape recommended.</p><div class="controls"><span><kbd>WASD</kbd> MOVE</span><span><kbd>MOUSE</kbd> AIM + FIRE</span><span><kbd>SPACE</kbd> DASH</span></div>
@@ -40,10 +40,17 @@
 
       <section id="armory" class="panel armory hidden">
         <button class="back" data-action="armory-done">← DONE</button>
-        <p class="eyebrow">SIX SLOTS. YOUR BUILD.</p><h2 id="armoryTitle">Your ship</h2>
-        <p class="muted">Select a slot, then a weapon. All equipped weapons fire together. Duplicates allowed. Set your online loadout before joining.</p>
-        <div id="slots"></div><div class="armory-actions"><button data-action="unequip">EMPTY SELECTED SLOT</button><button data-action="armory-player">SWITCH PLAYER (LOCAL)</button></div>
-        <div id="weaponCards"></div>
+        <p class="eyebrow">ONE WEAPON. BUILD YOUR RUN.</p><h2 id="armoryTitle">Your character</h2>
+        <p id="profileInfo" class="muted"></p><div id="slots"></div>
+        <button data-action="armory-player">SWITCH PLAYER (LOCAL)</button>
+        <h3>Choose one starter weapon</h3><p class="muted">Find supply crates during waves. Collect green materials and XP, then buy weapons and passive items in the shop. Combine two matching weapons of the same rarity to upgrade them.</p><div id="weaponCards"></div>
+      </section>
+      <section id="shop" class="panel shop hidden">
+        <p class="eyebrow">WAVE CLEARED · FIELD SHOP</p><h2 id="shopTitle"></h2>
+        <p id="shopStats"></p><p id="shopHint" class="muted"></p><div id="levelChoices"></div>
+        <div class="shop-toolbar"><button id="reroll">REROLL</button><button id="switchShop">SWITCH PLAYER</button><button id="readyShop" class="primary">READY · NEXT WAVE</button></div>
+        <p id="teamReady" role="status"></p><h3>Shop offers</h3><p class="muted">Lock offers to keep them through rerolls and waves. A matching purchase can combine automatically when all six slots are full.</p><div id="offers"></div>
+        <h3>Your weapons · 6 slots maximum</h3><div id="inventory"></div><p id="itemList" class="muted"></p>
       </section>
       <div id="loadoutHud" aria-live="off"></div>
       <section id="lobby" class="panel lobby hidden">
@@ -66,8 +73,9 @@
       <div id="toast" class="toast hidden"></div>
       <div id="touch" class="touch hidden"><div class="stick" id="moveStick" aria-label="Movement stick"><i></i><span>MOVE</span></div><div class="stick fire" id="aimStick" aria-label="Aim and fire stick"><i></i><span>AIM / FIRE</span></div><button id="dashTouch">DASH</button></div>
     </section>
-    <footer><span id="mode">READY</span><span>v1.2 // SIX-WEAPON ARSENAL</span></footer>
+    <footer><span id="mode">READY</span><span>v1.3 // LOOT · SHOP · EVOLVE</span></footer>
   </main>
-  <script src="game.js?v=1.2"></script>
+  <script src="progression.js?v=1.3"></script>
+  <script src="game.js?v=1.3"></script>
 </body>
 </html>

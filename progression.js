@@ -1,0 +1,47 @@
+/* Original run economy. Pure rules are shared by gameplay and simulation tests. */
+(() => {
+'use strict';
+const tiers=[null,{name:'Common',color:'#b8c8d8',power:1},{name:'Uncommon',color:'#68f7c2',power:1.55},{name:'Rare',color:'#54bfff',power:2.3},{name:'Epic',color:'#d69cff',power:3.4}];
+const characters={
+ ranger:{name:'Ranger',unlock:0,desc:'Balanced ship · +10% damage',damage:1.1},
+ scout:{name:'Scout',unlock:3,desc:'+20% speed · +50% pickup range · −20 HP',speed:1.2,hp:-20,pickup:1.5},
+ bulwark:{name:'Bulwark',unlock:5,desc:'+40 HP · +4 armor · −15% speed',hp:40,armor:4,speed:.85},
+ engineer:{name:'Engineer',unlock:8,desc:'+8 harvesting · +20 luck · −10% damage',harvest:8,luck:20,damage:.9}
+};
+const stats={damage:{name:'Damage',desc:'+15% damage'},rate:{name:'Attack speed',desc:'+12% firing speed'},health:{name:'Vitality',desc:'+15 maximum HP'},speed:{name:'Mobility',desc:'+8% movement speed'},armor:{name:'Armor',desc:'+2 armor'},regen:{name:'Regeneration',desc:'+0.5 HP per second'},luck:{name:'Luck',desc:'+10 luck: better shop rarities'},harvest:{name:'Harvesting',desc:'+4 materials each wave'},crit:{name:'Critical chance',desc:'+5% chance of double damage'}};
+const starters=['pistol','smg','shotgun','knife','spear'];
+let serial=0;
+function weapon(id,tier=1){return {uid:++serial,id,tier,cool:0,spin:0};}
+function config(c){return {character:Object.hasOwn(characters,c?.character)?c.character:'ranger',starter:starters.includes(c?.starter)?c.starter:'pistol'};}
+function init(p,c){c=config(c);const a=characters[c.character];Object.assign(p,{character:c.character,level:1,xp:0,materials:0,pending:0,levelChoices:[],armor:a.armor||0,regen:0,luck:a.luck||0,harvest:a.harvest||0,crit:.05,pickup:90*(a.pickup||1),shop:[],rerolls:0,ready:false,revision:0,items:[],weapons:[weapon(c.starter)]});p.maxHp+=a.hp||0;p.hp=p.maxHp;p.speed*=a.speed||1;p.damage*=a.damage||1;return p;}
+function threshold(p){return 8+p.level*5;}
+function sample(keys,n,rng=Math.random){const a=[...keys],out=[];while(out.length<n&&a.length)out.push(a.splice(Math.floor(rng()*a.length),1)[0]);return out;}
+function grant(p,materials,xp){p.materials+=materials;p.xp+=xp;while(p.xp>=threshold(p)){p.xp-=threshold(p);p.level++;p.pending++;}if(p.pending&&!p.levelChoices.length)p.levelChoices=sample(Object.keys(stats),3);}
+function apply(p,id,tier=1){const n=tier;if(id==='damage')p.damage*=1+.15*n;if(id==='rate')p.rate=Math.max(.045,p.rate/(1+.12*n));if(id==='health'){p.maxHp+=15*n;p.hp=Math.min(p.maxHp,p.hp+15*n);}if(id==='speed')p.speed=Math.min(480,p.speed*(1+.08*n));if(id==='armor')p.armor+=2*n;if(id==='regen')p.regen+=.5*n;if(id==='luck')p.luck+=10*n;if(id==='harvest')p.harvest+=4*n;if(id==='crit')p.crit=Math.min(.8,p.crit+.05*n);}
+function rarity(wave,luck,rng=Math.random){const roll=rng(),bonus=wave*.008+luck*.001;return roll<Math.min(.12,Math.max(0,(wave-7)*.008+luck*.0004))?4:roll<Math.min(.35,.03+bonus)?3:roll<Math.min(.70,.22+bonus)?2:1;}
+function price(id,tier,wave){return Math.round((['rocket','minigun','laser','sniper'].includes(id)?24:16)*(1+(tier-1)*.8)+wave*2);}
+function restock(p,wave,weaponIds,rng=Math.random){p.shop=Array.from({length:4},(_,i)=>{if(p.shop[i]?.locked)return p.shop[i];const kind=i<2||rng()<.55?'weapon':'item',id=sample(kind==='weapon'?weaponIds:Object.keys(stats),1,rng)[0],tier=rarity(wave,p.luck,rng);return {uid:++serial,kind,id,tier,cost:price(id,tier,wave),locked:false};});}
+function open(p,wave,weaponIds){p.materials+=10+wave*2+p.harvest;p.hp=Math.min(p.maxHp,Math.max(p.hp,p.maxHp*.5)+20);p.ready=false;p.rerolls=0;p.revision++;restock(p,wave,weaponIds);}
+function partner(p,w){return p.weapons.find(s=>s.uid!==w.uid&&s.id===w.id&&s.tier===w.tier&&s.tier<4);}
+function sellValue(w,wave){return Math.max(1,Math.floor(price(w.id,w.tier,wave)*.4));}
+function rerollCost(p,wave){return 3+wave+p.rerolls*3;}
+function action(p,m,wave,weaponIds){
+ if(!m||m.wave!==wave||m.revision!==p.revision)return false;
+ const w=p.weapons.find(w=>w.uid===m.uid),o=p.shop.find(o=>o?.uid===m.uid);
+ if(m.action==='ready'){if(p.pending)return false;p.ready=!p.ready;}
+ else {
+  if(p.ready)return false;
+  if(m.action==='buy'){if(!o||p.materials<o.cost)return false;const same=p.weapons.find(w=>w.id===o.id&&w.tier===o.tier&&w.tier<4);if(o.kind==='weapon'&&p.weapons.length>=6&&!same)return false;p.materials-=o.cost;if(o.kind==='weapon'){if(p.weapons.length>=6){same.tier++;}else p.weapons.push(weapon(o.id,o.tier));}else {apply(p,o.id,o.tier);p.items.push({id:o.id,tier:o.tier});}p.shop[p.shop.indexOf(o)]=null;}
+  else if(m.action==='combine'){const other=w&&partner(p,w);if(!other)return false;w.tier++;p.weapons.splice(p.weapons.indexOf(other),1);}
+  else if(m.action==='sell'){if(!w||p.weapons.length<=1)return false;p.materials+=sellValue(w,wave);p.weapons.splice(p.weapons.indexOf(w),1);}
+  else if(m.action==='lock'){if(!o)return false;o.locked=!o.locked;}
+  else if(m.action==='reroll'){const cost=rerollCost(p,wave);if(p.materials<cost||p.shop.every(o=>o?.locked))return false;p.materials-=cost;p.rerolls++;restock(p,wave,weaponIds);}
+  else if(m.action==='level'){if(!p.pending||!p.levelChoices.includes(m.stat))return false;apply(p,m.stat);p.pending--;p.levelChoices=p.pending?sample(Object.keys(stats),3):[];}
+  else return false;
+ }
+ p.revision++;return true;
+}
+function loot(p,id){if(p.weapons.length<6)p.weapons.push(weapon(id));else {const w=p.weapons.find(w=>w.id===id&&w.tier===1);if(w)w.tier++;else p.materials+=12;}}
+const api={tiers,characters,stats,starters,weapon,config,init,threshold,grant,apply,rarity,price,restock,open,partner,sellValue,rerollCost,action,loot};
+if(typeof module!=='undefined')module.exports=api;else window.RRProgress=api;
+})();
