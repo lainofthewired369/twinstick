@@ -1,4 +1,4 @@
-# Rift Runners (v1.6.1)
+# Rift Runners (v1.7)
 Play: https://lainofthewired369.github.io/twinstick/
 
 ## Graphics evolve at waves five and ten
@@ -35,7 +35,14 @@ Choose your own character and starter before entering ONLINE P2P.
 1. Host leaves the room password blank to generate one, or enters a unique game-only password of 8–64 characters.
 2. Tap HOST ROOM and wait for “Room ready”.
 3. Share the password; your friend enters it and taps JOIN ROOM.
-4. Both players must refresh to v1.6.1 before connecting.
+4. Both players must refresh to v1.7 before connecting.
+
+## Shared exponential enemy difficulty
+At the start of each wave, the host snapshots average team power from equipped weapon DPS, weapon rarity, damage, attack speed, critical chance, projectile count, maximum HP, armor, shields, regeneration and life-steal. Power is normalized to the current wave using the same estimate as boss scaling. Current HP is excluded, and downed teammates still count.
+
+The extra shared multiplier is `S = min(4, 2^(max(0, power - 1) / 2))`. Power 1 or below gives ×1; power 3 gives ×2; power 5 or above gives ×4. All regular enemies, splitter offspring, boss summons and bosses receive ×S health, ×S^0.25 contact/projectile damage (maximum about ×1.41), and ×S^0.15 attack frequency (maximum about ×1.23). Movement, projectile speed and warning durations remain unchanged. Existing boss power and co-op health scaling still apply, so the shared ×4 can stack with the boss's own ×4 health adjustment.
+
+The multiplier stays fixed throughout the wave: loot affects the next wave, and enemies never heal or change strength when a player takes damage. The host replicates the snapshot to the guest. The run HUD displays THREAT ×S. New runs reset it.
 
 ## Boss waves
 A Rift Warden arrives after the regular enemies finish spawning on every fifth wave (5, 10, 15…). It cycles through five-shot aimed volleys, 16-shot rings and nine-shot fans, warning before firing. Below half health it fires faster and rings grow to 20 shots. It periodically summons runners and gunners. Defeating it grants a guaranteed weapon crate plus bonus materials and XP; all remaining enemies must also be defeated to open the shop.
