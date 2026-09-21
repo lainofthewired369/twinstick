@@ -5,7 +5,7 @@
   <meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
   <meta name="theme-color" content="#080b12">
   <meta name="description" content="Rift Runners — a peer-to-peer twin-stick wave survival game.">
-  <title>Rift Runners</title>
+  <title>Rift Runners — Riftbreak</title>
   <link rel="icon" type="image/svg+xml" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 64 64'%3E%3Crect width='64' height='64' rx='14' fill='%23080b12'/%3E%3Cpath d='M32 7 48 25 39 29 51 48 33 40 22 56 23 37 7 32 25 25z' fill='%2368f7c2'/%3E%3C/svg%3E">
   <link rel="stylesheet" href="style.css?v=1.5">
 </head>
@@ -22,20 +22,20 @@
     </header>
 
     <section class="stage">
-      <canvas id="game" width="1280" height="720" aria-label="Rift Runners game arena"></canvas>
+      <canvas data-edition="riftbreak" id="game" width="1280" height="720" aria-label="Rift Runners game arena"></canvas>
       <div class="scanlines"></div>
 
       <section id="menu" class="panel menu">
-        <p class="eyebrow">SECTOR 07 // AFTERBURN</p>
-        <h1>BUILD. SURVIVE.<br><em>BREAK THE RIFT.</em></h1>
-        <p class="lede">One ship. Endless builds. Salvage augments, evolve your arsenal, and take on adaptive bosses together.</p>
+        <p class="eyebrow">RIFTBREAK EDITION // REALITY IS FRAGILE</p>
+        <h1>BREAK THE BOSS.<br><em>BREAK REALITY.</em></h1>
+        <p class="lede">Defeat the wave-5 Warden. Crack the screen. Rebuild reality in a new visual dimension.</p>
         <div class="actions">
           <button class="primary" data-action="solo">PLAY SOLO <span>→</span></button>
           <button data-action="local">LOCAL CO-OP</button>
           <button data-action="armory">CHARACTER & STARTER</button>
           <button data-action="online">ONLINE P2P</button>
         </div>
-        <a class="edition-link" href="riftbreak.html">TRY RIFTBREAK EDITION ↗</a>
+        <div class="edition-links"><a class="edition-link" href="rift-preview.html">PREVIEW TRANSFORMATION ↗</a><a class="edition-link" href="index.html">AFTERBURN EDITION ↗</a></div>
         <p class="touch-help">Left thumb: move · Right thumb: aim &amp; fire · Tap DASH to evade. Landscape recommended.</p><div class="controls"><span><kbd>WASD</kbd> MOVE</span><span><kbd>MOUSE</kbd> AIM + FIRE</span><span><kbd>SPACE</kbd> DASH</span></div>
       </section>
 
@@ -84,9 +84,10 @@
       <div id="toast" class="toast hidden"></div>
       <div id="touch" class="touch hidden"><div class="stick" id="moveStick" aria-label="Movement stick"><i></i><span>MOVE</span></div><div class="stick fire" id="aimStick" aria-label="Aim and fire stick"><i></i><span>AIM / FIRE</span></div><button id="dashTouch">DASH</button></div>
     </section>
-    <footer><span id="mode">READY</span><span>v1.5 // AFTERBURN</span></footer>
+    <footer><span id="mode">READY</span><span>v1.5 // RIFTBREAK</span></footer>
   </main>
   <script src="progression.js?v=1.5"></script>
+  <script src="rift-visuals.js?v=1.5"></script>
   <script src="game.js?v=1.5"></script>
 </body>
 </html>

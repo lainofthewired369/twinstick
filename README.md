@@ -1,5 +1,12 @@
-# Rift Runners — Afterburn (v1.4)
+# Rift Runners — Afterburn + Riftbreak (v1.5)
 Play: https://lainofthewired369.github.io/twinstick/
+
+## Riftbreak edition
+Play the alternate edition at https://lainofthewired369.github.io/twinstick/riftbreak.html . Visual preview: https://lainofthewired369.github.io/twinstick/rift-preview.html . The regular Afterburn edition stays available at the main address.
+
+Defeat the boss on wave 5 to fracture reality. Combat and hostile projectiles pause during a three-second transition. Cracks spread over the arena, the scene changes at the midpoint, and a new visual style remains for the rest of the run: faceted ships with engines and visible weapon mounts, armored enemies, a tiled star-lit arena, projectile trails, layered beams and explosions, crystalline loot, spark streaks, and an upgraded HUD/shop theme. This changes presentation, not combat stats or hitboxes. Remaining reinforcements still need to be cleared before shopping.
+
+The host replicates the transition and visual tier; both online players must use the Riftbreak edition. It triggers only once per run and resets on restart. Reduced-motion settings replace the crack/light effect with a calm title fade and remove decorative rotation and engine pulsing. The visual preview is separate from gameplay and does not affect saves; its original view is schematic, while the upgraded view uses the actual in-game renderer.
 
 ## Build a run
 Choose CHARACTER & STARTER before playing. You begin with one Common weapon, level 1, and no materials. Five starter choices are available; all ten weapon types can appear in shops and supply crates. Up to six weapons fire together.
@@ -28,7 +35,7 @@ Choose your own character and starter before entering ONLINE P2P.
 1. Host leaves the room password blank to generate one, or enters a unique game-only password of 8–64 characters.
 2. Tap HOST ROOM and wait for “Room ready”.
 3. Share the password; your friend enters it and taps JOIN ROOM.
-4. Both players must refresh to v1.4 before connecting.
+4. Both players must refresh to v1.5 and use the same edition before connecting.
 
 ## Boss waves
 A Rift Warden arrives after the regular enemies finish spawning on every fifth wave (5, 10, 15…). It cycles through five-shot aimed volleys, 16-shot rings and nine-shot fans, warning before firing. Below half health it fires faster and rings grow to 20 shots. It periodically summons runners and gunners. Defeating it grants a guaranteed weapon crate plus bonus materials and XP; all remaining enemies must also be defeated to open the shop.
