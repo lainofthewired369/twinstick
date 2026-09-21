@@ -3,5 +3,27 @@
 <style>body{margin:20px;background:#080d16;color:#d9edff;font:14px system-ui}button{padding:12px;margin:0 6px 16px 0;background:#193049;color:#fff;border:1px solid #547792;border-radius:8px}iframe{display:block;border:1px solid #547792;width:844px;height:390px;max-width:none}p{color:#9bb6ce}</style>
 <h1>Responsive layout check</h1><p>The actual game runs inside a phone-sized viewport. Use its normal controls to check panels and scrolling.</p>
 <button data-size="844,390">Landscape 844 × 390</button><button data-size="667,375">Small landscape 667 × 375</button><button data-size="390,844">Portrait 390 × 844</button>
+<button id="shopSample">Shop layout sample</button><button id="playGame">Playable game</button>
 <iframe id="preview" src="index.html" title="Game viewport"></iframe>
+<script>
+// A sample of the production shop markup, with no game state or saved progress.
+document.querySelector('#playGame').onclick=()=>{const f=document.querySelector('#preview');f.removeAttribute('srcdoc');f.src='index.html';};
+document.querySelector('#shopSample').onclick=async()=>{
+ const html=await (await fetch('index.html')).text(),doc=new DOMParser().parseFromString(html,'text/html');
+ doc.querySelectorAll('script').forEach(s=>s.remove());
+ doc.querySelectorAll('.panel').forEach(p=>p.classList.add('hidden'));
+ doc.querySelector('#shop').classList.remove('hidden');
+ doc.querySelector('#shopTitle').textContent='Ranger · Green ship';
+ doc.querySelector('#shopWallet').textContent='120 ◇';
+ doc.querySelector('#shopHint').textContent='Sample shop: choose a section to check the layout.';
+ doc.querySelector('#shopStats').textContent='120 materials · Level 3 · XP 9/24 · HP 100/100 · Damage 110% · Armor 0 · Regen 0.0/s · Luck 0 · Harvest 0 · Crit 5%';
+ doc.querySelector('#teamReady').textContent='Green: Shopping';
+ doc.querySelector('#offers').textContent='Sample market. Tap Ship Stats above to view your ship.';
+ doc.querySelector('#switchShop').classList.add('hidden');
+ doc.querySelectorAll('.shop-toolbar button').forEach(b=>b.disabled=true);
+ const script=doc.createElement('script');
+ script.textContent="document.querySelectorAll('.shop-tabs button').forEach(b=>b.onclick=()=>{document.querySelectorAll('.shop-tabs button').forEach(t=>t.classList.toggle('selected',t===b));document.querySelectorAll('.shop-scroll>section').forEach(p=>p.classList.toggle('hidden',p.id!=='pane-'+b.id.slice(4)));});";
+ doc.body.append(script);document.querySelector('#preview').srcdoc=doc.documentElement.outerHTML;
+};
+</script>
 <script>document.querySelectorAll('[data-size]').forEach(b=>b.onclick=()=>{const [w,h]=b.dataset.size.split(',');const f=document.querySelector('iframe');f.style.width=w+'px';f.style.height=h+'px';});</script></html>

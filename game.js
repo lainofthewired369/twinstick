@@ -62,7 +62,7 @@ function renderShop(){
  $('#itemList').replaceChildren();if(!p.items.length)$('#itemList').textContent='No augments yet. Buy one in the market.';
  for(const i of p.items){const def=P.items[i.id]||P.stats[i.id],card=document.createElement('article');card.className='shop-card';card.style.borderColor=P.tiers[i.tier].color;card.textContent=(def.icon||'◆')+' '+P.tiers[i.tier].name+' '+def.name+' — '+def.desc+' ×'+i.tier;$('#itemList').append(card);}
  $('#shopWallet').textContent=p.materials+' ◇';
- for(const tab of ['offers','inventory','items']){$('#pane-'+tab).classList.toggle('hidden',shopTab!==tab);$('#tab-'+tab).classList.toggle('selected',shopTab===tab);}
+ for(const tab of ['offers','inventory','items','stats']){$('#pane-'+tab).classList.toggle('hidden',shopTab!==tab);$('#tab-'+tab).classList.toggle('selected',shopTab===tab);}
 
  $('#reroll').textContent='REROLL · '+P.rerollCost(p,wave);$('#reroll').disabled=p.ready||p.materials<P.rerollCost(p,wave)||p.shop.every(o=>o?.locked);
  $('#readyShop').textContent=p.ready?'CANCEL READY':'READY · NEXT WAVE';$('#readyShop').disabled=!!p.pending;
@@ -360,7 +360,7 @@ $$('[data-action]').forEach(b=>b.onclick=async()=>{
 $('#reroll').onclick=()=>shopAction('reroll');
 $('#readyShop').onclick=()=>shopAction('ready');
 $('#switchShop').onclick=()=>{shopPlayer=1-shopPlayer;lastUI='';ui();};
-for(const tab of ['offers','inventory','items'])$('#tab-'+tab).onclick=()=>{shopTab=tab;lastUI='';ui();};
+for(const tab of ['offers','inventory','items','stats'])$('#tab-'+tab).onclick=()=>{shopTab=tab;lastUI='';ui();};
 function loop(t){const dt=Math.min(.033,(t-last)/1000||0);last=t;update(dt);draw();requestAnimationFrame(loop);}
 requestAnimationFrame(loop);
 })();
