@@ -1,6 +1,7 @@
 /* Original run economy. Pure rules are shared by gameplay and simulation tests. */
 (() => {
 'use strict';
+const S=typeof module!=='undefined'?require('./skill-tree.js'):window.RRSkills;
 const tiers=[null,{name:'Common',color:'#b8c8d8',power:1},{name:'Uncommon',color:'#68f7c2',power:1.55},{name:'Rare',color:'#54bfff',power:2.3},{name:'Epic',color:'#d69cff',power:3.4}];
 const characters={
  ranger:{name:'Ranger',unlock:0,desc:'Balanced ship · +10% damage',damage:1.1},
@@ -47,11 +48,12 @@ function applyItem(p,id,tier=1){
 const starters=['pistol','smg','shotgun','knife','spear'];
 let serial=0;
 function weapon(id,tier=1){return {uid:++serial,id,tier,cool:0,spin:0};}
+function syncSerial(players){for(const p of players)for(const entry of [...(p.weapons||[]),...(p.shop||[])])if(Number.isFinite(entry?.uid))serial=Math.max(serial,entry.uid);}
 function config(c){return {character:Object.hasOwn(characters,c?.character)?c.character:'ranger',starter:starters.includes(c?.starter)?c.starter:'pistol'};}
-function init(p,c){c=config(c);const a=characters[c.character];Object.assign(p,{character:c.character,level:1,xp:0,materials:0,pending:0,levelChoices:[],armor:a.armor||0,regen:0,luck:a.luck||0,harvest:a.harvest||0,crit:.05,range:1,blastScale:1,leech:0,slow:0,pierce:0,killHeal:0,materialBonus:0,xpBonus:0,berserk:0,maxShield:0,shield:0,shieldDelay:0,multi:1,dashTime:1.5,pickup:90*(a.pickup||1),shop:[],rerolls:0,ready:false,revision:0,items:[],weapons:[weapon(c.starter)]});p.maxHp+=a.hp||0;p.hp=p.maxHp;p.speed*=a.speed||1;p.damage*=a.damage||1;return p;}
+function init(p,c){c=config(c);const a=characters[c.character];Object.assign(p,{character:c.character,level:1,xp:0,skillPoints:0,skills:['core'],abilities:{},abilityTimers:{},orbitTime:0,materials:0,pending:0,levelChoices:[],armor:a.armor||0,regen:0,luck:a.luck||0,harvest:a.harvest||0,crit:.05,range:1,blastScale:1,leech:0,slow:0,pierce:0,killHeal:0,materialBonus:0,xpBonus:0,berserk:0,maxShield:0,shield:0,shieldDelay:0,multi:1,dashTime:1.5,pickup:90*(a.pickup||1),shop:[],rerolls:0,ready:false,revision:0,items:[],weapons:[weapon(c.starter)]});p.maxHp+=a.hp||0;p.hp=p.maxHp;p.speed*=a.speed||1;p.damage*=a.damage||1;return p;}
 function threshold(p){return 8+p.level*5;}
 function sample(keys,n,rng=Math.random){const a=[...keys],out=[];while(out.length<n&&a.length)out.push(a.splice(Math.floor(rng()*a.length),1)[0]);return out;}
-function grant(p,materials,xp){const cash=materials*(1+p.materialBonus)+(p.materialCarry||0),experience=xp*(1+p.xpBonus)+(p.xpCarry||0);p.materials+=Math.floor(cash);p.materialCarry=cash-Math.floor(cash);p.xp+=Math.floor(experience);p.xpCarry=experience-Math.floor(experience);while(p.xp>=threshold(p)){p.xp-=threshold(p);p.level++;p.pending++;}if(p.pending&&!p.levelChoices.length)p.levelChoices=sample(Object.keys(stats),3);}
+function grant(p,materials,xp){const cash=materials*(1+p.materialBonus)+(p.materialCarry||0),experience=xp*(1+p.xpBonus)+(p.xpCarry||0);p.materials+=Math.floor(cash);p.materialCarry=cash-Math.floor(cash);p.xp+=Math.floor(experience);p.xpCarry=experience-Math.floor(experience);while(p.xp>=threshold(p)){p.xp-=threshold(p);p.level++;p.pending++;p.skillPoints++;}if(p.pending&&!p.levelChoices.length)p.levelChoices=sample(Object.keys(stats),3);}
 function apply(p,id,tier=1){const n=tier;if(id==='damage')p.damage*=1+.15*n;if(id==='rate')p.rate=Math.max(.045,p.rate/(1+.12*n));if(id==='health'){p.maxHp+=15*n;p.hp=Math.min(p.maxHp,p.hp+15*n);}if(id==='speed')p.speed=Math.min(480,p.speed*(1+.08*n));if(id==='armor')p.armor+=2*n;if(id==='regen')p.regen+=.5*n;if(id==='luck')p.luck+=10*n;if(id==='harvest')p.harvest+=4*n;if(id==='crit')p.crit=Math.min(.8,p.crit+.05*n);}
 function rarity(wave,luck,rng=Math.random){const roll=rng(),bonus=wave*.008+luck*.001;return roll<Math.min(.12,Math.max(0,(wave-7)*.008+luck*.0004))?4:roll<Math.min(.35,.03+bonus)?3:roll<Math.min(.70,.22+bonus)?2:1;}
 function price(id,tier,wave){return Math.round((['rocket','minigun','laser','sniper'].includes(id)?24:16)*(1+(tier-1)*.8)+wave*2);}
@@ -71,12 +73,13 @@ function action(p,m,wave,weaponIds){
   else if(m.action==='sell'){if(!w||p.weapons.length<=1)return false;p.materials+=sellValue(w,wave);p.weapons.splice(p.weapons.indexOf(w),1);}
   else if(m.action==='lock'){if(!o)return false;o.locked=!o.locked;}
   else if(m.action==='reroll'){const cost=rerollCost(p,wave);if(p.materials<cost||p.shop.every(o=>o?.locked))return false;p.materials-=cost;p.rerolls++;restock(p,wave,weaponIds);}
+  else if(m.action==='skill'){if(!S.unlock(p,m.stat,(p,n)=>{if(n.stat)apply(p,n.stat);if(n.item)applyItem(p,n.item);}))return false;}
   else if(m.action==='level'){if(!p.pending||!p.levelChoices.includes(m.stat))return false;apply(p,m.stat);p.pending--;p.levelChoices=p.pending?sample(Object.keys(stats),3):[];}
   else return false;
  }
  p.revision++;return true;
 }
 function loot(p,id){if(p.weapons.length<6)p.weapons.push(weapon(id));else {const w=p.weapons.find(w=>w.id===id&&w.tier===1);if(w)w.tier++;else p.materials+=12;}}
-const api={tiers,characters,stats,items,applyItem,starters,weapon,config,init,threshold,grant,apply,rarity,price,restock,open,partner,sellValue,rerollCost,action,loot};
+const api={skills:S,syncSerial,tiers,characters,stats,items,applyItem,starters,weapon,config,init,threshold,grant,apply,rarity,price,restock,open,partner,sellValue,rerollCost,action,loot};
 if(typeof module!=='undefined')module.exports=api;else window.RRProgress=api;
 })();

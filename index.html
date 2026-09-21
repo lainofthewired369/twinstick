@@ -7,7 +7,7 @@
   <meta name="description" content="Rift Runners — a peer-to-peer twin-stick wave survival game.">
   <title>Rift Runners</title>
   <link rel="icon" type="image/svg+xml" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 64 64'%3E%3Crect width='64' height='64' rx='14' fill='%23080b12'/%3E%3Cpath d='M32 7 48 25 39 29 51 48 33 40 22 56 23 37 7 32 25 25z' fill='%2368f7c2'/%3E%3C/svg%3E">
-  <link rel="stylesheet" href="style.css?v=1.8">
+  <link rel="stylesheet" href="style.css?v=1.9">
 </head>
 <body>
   <main>
@@ -28,7 +28,7 @@
       <section id="menu" class="panel menu">
         <p class="eyebrow">SECTOR 07 // REALITY IS FRAGILE</p>
         <h1>BUILD. SURVIVE.<br><em>BREAK THE RIFT.</em></h1>
-        <p class="lede">Build your ship. Survive together. Defeat the wave-five boss to transform the graphics. Beat wave ten to enter 3D.</p>
+        <p class="lede">Build your ship. Survive together. Defeat the wave-five boss to transform the graphics. Enter 3D at wave ten, then explore a looping planet after wave fifteen.</p>
         <div class="actions">
           <button class="primary" data-action="solo">PLAY SOLO <span>→</span></button>
           <button data-action="local">LOCAL CO-OP</button>
@@ -42,6 +42,7 @@
         <button class="back" data-action="armory-done">← DONE</button>
         <p class="eyebrow">ONE WEAPON. BUILD YOUR RUN.</p><h2 id="armoryTitle">Your character</h2>
         <p id="profileInfo" class="muted"></p><div id="slots"></div>
+        <button data-action="skills-preview">PREVIEW SKILL TREE</button>
         <button data-action="armory-player">SWITCH PLAYER (LOCAL)</button>
         <h3>Choose one starter weapon</h3><p class="muted">Find supply crates during waves. Collect green materials and XP, then buy weapons and passive items in the shop. Combine two matching weapons of the same rarity to upgrade them.</p><div id="weaponCards"></div>
       </section>
@@ -49,7 +50,7 @@
         <div class="shop-head"><div><p class="eyebrow">FIELD EXCHANGE // WAVE CLEARED</p><h2 id="shopTitle"></h2></div><strong id="shopWallet"></strong></div>
         <div class="shop-layout">
           <aside class="shop-sidebar">
-            <div class="shop-summary"><p id="shopHint"></p><div id="levelChoices"></div></div>
+            <div class="shop-summary"><button data-action="skills" class="skill-entry">✦ SKILL TREE</button><p id="shopHint"></p><div id="levelChoices"></div></div>
             <div class="shop-toolbar"><p id="teamReady" role="status"></p><button id="reroll">REROLL</button><button id="switchShop">SWITCH PLAYER</button><button id="readyShop" class="primary">READY · NEXT WAVE</button></div>
           </aside>
           <div class="shop-browser"><nav class="shop-tabs" aria-label="Shop sections"><button id="tab-offers">MARKET</button><button id="tab-inventory">WEAPONS</button><button id="tab-items">AUGMENTS</button><button id="tab-stats">SHIP STATS</button></nav>
@@ -61,6 +62,11 @@
             </div>
           </div>
         </div>
+      </section>
+      <section id="skills" class="panel skill-panel hidden" aria-label="Skill tree">
+        <div class="tree-head"><button data-action="skill-close">← BACK</button><b>CONSTELLATION</b><strong id="treePoints"></strong><button id="treeZoomOut" aria-label="Zoom out">−</button><button id="treeZoomIn" aria-label="Zoom in">+</button><button id="treeCenter">CENTER</button></div>
+        <div class="tree-layout"><div id="treeMap" tabindex="0" aria-label="Pan the skill tree"><div id="treeSpace"><div id="treeWorld"><svg id="treeLines" viewBox="0 0 1200 960" aria-hidden="true"></svg></div></div></div>
+        <aside class="tree-detail"><p class="eyebrow">CHOOSE YOUR PATH</p><h2 id="treeName"></h2><p id="treeDescription"></p><p id="treeRequirement"></p><button id="treeUnlock" class="primary">UNLOCK</button><p id="treeHint" class="small-print"></p></aside></div>
       </section>
       <div id="loadoutHud" aria-live="off"></div>
       <div id="bossHud" class="hidden"><b id="bossName">RIFT WARDEN</b><progress id="bossBar" value="1" max="1" aria-label="Boss health"></progress></div>
@@ -85,11 +91,14 @@
       <div id="toast" class="toast hidden"></div>
       <div id="touch" class="touch hidden"><div class="stick" id="moveStick" aria-label="Movement stick"><i></i><span>MOVE</span></div><div class="stick fire" id="aimStick" aria-label="Aim and fire stick"><i></i><span>AIM / FIRE</span></div><button id="dashTouch">DASH</button></div>
     </section>
-    <footer><span id="mode">READY</span><span>v1.8 // RIFT RUNNERS</span></footer>
+    <footer><span id="mode">READY</span><span>v1.9 // RIFT RUNNERS</span></footer>
   </main>
-  <script src="progression.js?v=1.8"></script>
-  <script src="rift-visuals.js?v=1.8"></script>
-  <script src="rift-3d.js?v=1.8"></script>
-  <script src="game.js?v=1.8"></script>
+  <script src="skill-tree.js?v=1.9"></script>
+  <script src="skill-ui.js?v=1.9"></script>
+  <script src="sphere-world.js?v=1.9"></script>
+  <script src="progression.js?v=1.9"></script>
+  <script src="rift-visuals.js?v=1.9"></script>
+  <script src="rift-3d.js?v=1.9"></script>
+  <script src="game.js?v=1.9"></script>
 </body>
 </html>

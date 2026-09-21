@@ -1,17 +1,31 @@
-# Rift Runners (v1.8)
+# Rift Runners (v1.9)
 Play: https://lainofthewired369.github.io/twinstick/
 
-## Graphics evolve at waves five and ten
+## Graphics evolve at waves five, ten and fifteen
 There is one game at the main address. The old riftbreak.html link redirects there. Visual preview: https://lainofthewired369.github.io/twinstick/rift-preview.html .
 
 Defeat the boss on wave 5 to fracture reality. Combat and hostile projectiles pause during a three-second transition. Cracks spread over the arena, the scene changes at the midpoint, and a new visual style remains for the rest of the run: faceted ships with engines and visible weapon mounts, armored enemies, a tiled star-lit arena, projectile trails, layered beams and explosions, crystalline loot, spark streaks, and an upgraded HUD/shop theme. This changes presentation, not combat stats or hitboxes. Remaining reinforcements still need to be cleared before shopping.
 
-The host replicates the transition and visual tier; all players receive it in the main game. At wave 10, defeating the boss triggers a second three-second transition into Layer III: real WebGL geometry with raised tiles, extruded ships and enemies, directional lighting, ground shadows and 3D projectiles. Each milestone triggers once per run and both reset on restart. The fixed oblique camera preserves ground-plane aiming and touch controls. WebGL uses a 960×540 drawing surface for phone performance; devices without WebGL render the same lit 3D mesh with a software triangle renderer. If neither renderer is available, enhanced 2D remains playable. Reduced-motion settings replace the crack/light effect with a calm title fade and remove decorative rotation and engine pulsing. The visual preview is separate from gameplay and does not affect saves; its original view is schematic, while the upgraded view uses the actual in-game renderer.
+The host replicates the transition and visual tier; all players receive it in the main game. At wave 10, defeating the boss triggers a second three-second transition into Layer III: real WebGL geometry with raised tiles, extruded ships and enemies, directional lighting, ground shadows and 3D projectiles. Each milestone triggers once per run and all reset on restart. The fixed oblique camera preserves ground-plane aiming and touch controls. WebGL uses a 960×540 drawing surface for phone performance; devices without WebGL render the same lit 3D mesh with a software triangle renderer. If neither renderer is available, enhanced 2D remains playable. Reduced-motion settings replace the crack/light effect with a calm title fade and remove decorative rotation and engine pulsing. The visual preview is separate from gameplay and does not affect saves; its original view is schematic, while the upgraded view uses the actual in-game renderer.
+
+At wave 15, defeating the boss unlocks Layer IV: a tessellated 3D planet rendered at 1280×720 with additional ship detail, a starfield and an atmospheric rim. The camera follows your ship around the globe. Movement and projectiles follow great circles, cross the longitude seam and poles, and use surface distances for enemy pursuit, loot, attacks and collisions. There are no arena walls on the planet. Mouse aiming projects onto the visible surface; touch sticks keep local east/south controls. The planet and its combat state survive host migration.
+
+## Constellation skill tree
+Earn one skill point per level in addition to the existing random stat choice. Open SKILL TREE in the shop, or inspect it through CHARACTER & STARTER → PREVIEW SKILL TREE. There are 26 nodes: the core, five branches, and crosslinks between adjacent paths. Pan with touch, zoom with +/−, and tap a node to read its effect. Spend points on a connected path; each ability costs two points after two one-point prerequisite nodes. Points can be saved. Ready players must cancel Ready before buying nodes.
+
+- Storm: damage and critical chance → Arc Relay, chaining hits to two nearby enemies.
+- Orbit: firing speed and armor → two Orbiting Blades.
+- Impulse: movement and damage → Shockwave Dash.
+- Guardian: maximum HP and regeneration → a Repair Drone that heals nearby teammates.
+- Arsenal: harvesting and damage → an automatic Missile Drone.
+- Each branch ends in a mastery upgrade; crosslinks grant luck and alternate routes.
+
+Skill points, nodes, ability cooldowns and unlocks belong to each ship and reset on a fresh run. They are validated by the host and restored on rejoining or migration. Unlocked abilities contribute to enemy power scaling.
 
 ## Build a run
 Choose CHARACTER & STARTER before playing. You begin with one Common weapon, level 1, and no materials. Five starter choices are available; all ten weapon types can appear in shops and supply crates. Up to six weapons fire together.
 
-Defeated enemies drop green materials that also award XP. Nearby drops are drawn toward your ship. Tank enemies can drop gold supply crates containing a Common weapon. In co-op, a collected drop rewards both players. A crate fills an empty slot, upgrades a matching Common weapon when full, or gives 12 materials. Leftover drops are collected automatically when the wave ends.
+Defeated enemies drop green materials that also award XP. Nearby drops are drawn toward your ship. Tank enemies can drop gold supply crates containing a Common weapon. In co-op, a collected drop rewards every connected player. A crate fills an empty slot, upgrades a matching Common weapon when full, or gives 12 materials. Leftover drops are collected automatically when the wave ends.
 
 ## Field shop
 After each wave, each player receives a survival bonus plus their Harvesting stat. Downed teammates revive; ships recover health. Spend your own materials on four personal offers: weapons and passive stat items. Shops always roll at least two weapon offers unless locked items occupy those slots.
@@ -35,7 +49,7 @@ Choose your own character and starter before opening ONLINE · UP TO 8.
 1. The host enters a unique game-only password (8–64 characters), or leaves it blank to generate one.
 2. Share that password with up to seven friends. They select JOIN ROOM.
 3. The roster shows each player's number, colour and character. The host selects START RUN once everyone has joined.
-4. All players must refresh to v1.8. Local keyboard co-op remains two players.
+4. All players must refresh to v1.9. Local keyboard co-op remains two players.
 
 Every online player has an independent ship, input stream, inventory, upgrades, wallet and shop. The host binds requests to the connection's assigned player ID; a client cannot choose another player's ship. All connected players must mark Ready. Eight colours and numbered ship labels identify the crew. Waves grow with party size above two players; boss health uses 1 + 0.8 × (connected players − 1). Projectile budgets are shared fairly between ships.
 
@@ -104,4 +118,4 @@ Static HTML/CSS/JS; GitHub Pages publishes main / (root). PeerJS 1.5.5 loads fro
 This is an original Brotato-inspired game, not a full port or a copy of its content.
 
 ## Validation
-Run `node tests.cjs` from the repository root. Tests cover economy, leveling, combining, locked offers, capacity, transaction replay, two-player readiness, shared loot, character stats, all ten weapon attacks, and guest transaction ownership. Simulated networking tests do not prove Internet reachability on every network.
+Run `node tests.cjs` from the repository root. Tests cover economy, leveling, combining, locked offers, capacity, transaction replay, eight-player readiness, host migration, rejoining, skill paths and abilities, spherical movement and collisions, shared loot, character stats, all ten weapon attacks, and guest transaction ownership. Simulated networking tests do not prove Internet reachability on every network.
