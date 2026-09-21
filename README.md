@@ -26,3 +26,10 @@ This is not guaranteed to connect on every network. PeerJS uses its default ICE 
 
 ## Hosting
 Static HTML/CSS/JS, no build step. GitHub Pages publishes main / (root).
+# Six-weapon arsenal (v1.2)
+
+Open ARMORY before a run. Select one of six slots, then a weapon; all equipped weapons fire together. Duplicate weapons are supported. Each online player chooses their own ship's loadout before hosting or joining. SWITCH PLAYER configures the second keyboard player's loadout for local co-op. At least one weapon remains equipped. Loadouts last for the current page session.
+
+Ten original weapons: pistol, shotgun, SMG, spinning minigun, piercing sniper, explosive rocket launcher, burning flamethrower, instant piercing laser, knife slash, and spear thrust. Damage and firing-rate upgrades affect the whole loadout. Extra-projectile upgrades add projectiles to guns and 15% damage per level to beam/melee attacks.
+
+This is the arsenal stage of an original Brotato-inspired expansion, not a full port. Shops, currency, rarity, weapon combining, and character progression are not included yet. Version 1.2 players must both refresh to join the same room.
