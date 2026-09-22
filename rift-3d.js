@@ -119,8 +119,8 @@ function draw(x,s){
   if(e.hp<=0||e.mirror||!visible(e))continue;const c=e.hit?'#ffffff':colors[e.type]||colors.drone,h=e.type==='boss'?46:e.type==='tank'?26:18;
   shadow(e.x,e.y,e.r+4);
   if((e.type==='lancer'||e.beamAttack)&&e.windup>0||e.beamLeft>0){const end=pointAt(e.x,e.y,Math.cos(e.aim)*(sphereMode?600:1000),Math.sin(e.aim)*(sphereMode?600:1000));line(e.x,e.y,end.x,end.y,1,e.beamLeft>0?12:2,e.beamLeft>0?'#fff1ff':'#71345d');}
-  if((sphereMode||thirdMode)&&model(e.type,e,e.aim||0,c,e.r/25,!hardware||detailed++>=40)){if(e.slowTime>0)ring(e.x,e.y,e.r+5,3,'#a2efff');continue;}
   if(e.windup>0&&e.type!=='lancer'){for(let n=0;n<8;n++){const a=n*TAU/8,at=pointAt(e.x,e.y,Math.cos(a)*(e.r+10),Math.sin(a)*(e.r+10));box(at.x,at.y,10,4,4,8,c,a);}}
+  if((sphereMode||thirdMode)&&model(e.type,e,e.aim||0,c,e.r/25,!hardware||detailed++>=40)){if(e.slowTime>0)ring(e.x,e.y,e.r+5,3,'#a2efff');continue;}
   const sides=['runner','charger','gunner','skirmisher'].includes(e.type)?3:['tank','sentinel','bomber'].includes(e.type)?4:6;
   prism(e.x,e.y,polygon(e.r,sides),2,h,c,e.aim||0,.75);
   prism(e.x,e.y,polygon(e.r*.55,sides),h+2,6,'#20314e',e.aim||0,.6);
