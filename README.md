@@ -187,3 +187,11 @@ Revive rings and remaining time render in every graphics phase, including the pl
 Protocol 17: all players must refresh to v1.18.0 and create a fresh room. Regression tests cover all three lives, range boundaries, accumulated time, shop protection, team wipe, solo respawn, sphere seams and checkpoint recovery. Real WebRTC tests cover downed state, remaining lives, partial progress and revival on a guest.
 
 Boss schedule in v1.18.0: normal Warden bosses on waves 1–5 inclusive; adaptive player-build mirror bosses start at wave 6. Wave 3–5 Wardens also receive 20% less health and 15% less projectile/ram damage; mirror relief continues through wave 15. Waves 1–2 and 16+ retain their prior balance.
+
+### v1.19.0 — slower bosses, instant respawns and free rescues
+
+All bosses move 30% slower and ram 35% slower. The wave 1–5 Warden / wave 6+ mirror schedule and wave 3–15 health/damage relief remain.
+
+Players start with 10 instant-respawn lives. Being downed no longer spends a life. Choose **Respawn Now** (touch/mouse button, keyboard R, controller A) to spend one and return immediately at full health with four seconds of invulnerability, shown by a gold ring. Alternatively, a living teammate can complete the existing cumulative 10-second proximity revive for free, with the same health/protection. Leaving the radius pauses progress. Free rescues still work with zero respawn lives. A team wipe only ends the run when nobody has a life left to respawn; solo players choose immediate respawn instead of waiting for an automatic timer. Respawning also works while the team is shopping. Local co-op displays a separate button for each downed ship.
+
+Respawn requests are validated by the host against the connection's player identity; duplicate requests cannot spend additional lives. Lives, downed state and progress survive checkpoints and reconnects. Protocol 18 requires everyone to refresh to v1.19.0 and start a fresh room. Tests cover free vs paid revival, protection, replay/ownership checks, zero-life rescues, team wipes, shopping, planet coordinates and boss movement/ram speed.
