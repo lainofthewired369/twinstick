@@ -18,8 +18,25 @@ for(let i=0;i<branches.length;i++){
  nodes.push({id:'bridge'+i,name:'Crosslink '+(i+1),desc:'+10 luck. Opens a route between adjacent branches.',stat:'luck',icon:'◇',cost:1,color:'#c4d6e8',requires:[b.id+'2',next.id+'2'],x:600+Math.cos(a)*235,y:460+Math.sin(a)*235});
 }
 for(let i=0;i<5;i++)nodes.find(n=>n.id===branches[i].id+'2').requires.push('bridge'+i,'bridge'+((i+4)%5));
+// Preserve original IDs and paths; extend each branch with four passives and a capstone.
+for(const n of nodes){n.x+=500;n.y+=590;}
+const capstones=[
+ ['chainLightning','Chain Lightning','Every 3 seconds, automatically strike up to five enemies in a jumping lightning chain for 90% damage each. First target within 500; jumps within 240.','ϟ'],
+ ['freezeRay','Freeze Ray','Every 4 seconds, fire a 650-range ray along your aim for 160% damage. Freeze ordinary enemies for 0.65 seconds and slow them 65% for 2 seconds. Bosses briefly stagger and slow 25%.','❄'],
+ ['gravityWell','Gravity Well','Every 6 seconds, pull enemies within 240 toward a target within 500 and deal 120% damage. Bosses take damage but resist the pull.','◎'],
+ ['aegisPulse','Aegis Pulse','Every 10 seconds, erase hostile bullets within 180 and protect nearby living teammates with 0.6 seconds of invulnerability.','⬡'],
+ ['clusterBarrage','Cluster Barrage','Every 5 seconds, launch five explosive rockets in a fan toward the nearest enemy within 650. Each deals 70% damage with a 65-radius blast.','✹']
+];
+for(let i=0;i<branches.length;i++){
+ const b=branches[i],angle=-Math.PI/2+i*Math.PI*2/5;
+ for(let j=0;j<5;j++){
+  const r=535+j*100,cap=capstones[i],passive=b.passives[j%2];
+  nodes.push({id:b.id+(j+5),name:j===4?cap[1]:passive[1]+' '+(j<2?'II':'III'),desc:j===4?cap[2]:passive[2],...(j===4?{ability:cap[0]}:{stat:passive[0]}),icon:j===4?cap[3]:b.icon,color:b.color,cost:j===4?3:1,requires:[b.id+(j+4)],x:1100+Math.cos(angle)*r,y:1050+Math.sin(angle)*r});
+ }
+}
+nodes.push({id:'nexus',name:'Fortune Nexus',desc:'+10 luck. A bonus path from any branch mastery.',stat:'luck',icon:'◇',cost:1,color:'#c4d6e8',requires:branches.map(b=>b.id+'4'),x:1100,y:1140});
 const byId=Object.fromEntries(nodes.map(n=>[n.id,n]));
 function available(p,id){const n=byId[id];return !!n&&!p.skills.includes(id)&&p.skillPoints>=n.cost&&n.requires.some(parent=>p.skills.includes(parent));}
 function unlock(p,id,apply){if(!available(p,id))return false;const n=byId[id];p.skillPoints-=n.cost;p.skills.push(id);if(n.ability)p.abilities[n.ability]=true;apply(p,n);return true;}
-const api={nodes,byId,available,unlock};if(typeof module!=='undefined')module.exports=api;else window.RRSkills=api;
+const api={nodes,byId,available,unlock,width:2200,height:2100,center:{x:1100,y:1050}};if(typeof module!=='undefined')module.exports=api;else window.RRSkills=api;
 })();
