@@ -17,14 +17,14 @@ const shipName=id=>'P'+(id+1)+' '+shipNames[id];
 const feedback=window.RRFeedback?.create();
 let combatEvents=[],combatSerial=0;
 const combatRates=new Map();
-function playCombat(e,silent=false){const gain=silent?0:Math.max(0,1-distance(cameraFocus(),e)/1100);feedback?.event(e,gain,!!reducedMotion?.matches);}
+function playCombat(e,silent=false){const gain=silent?0:Math.max(0,1-distance(cameraFocus(),e)/1100);const v=delta(cameraFocus(),e),a=controlAngle(cameraFocus());feedback?.event(e,gain,!!reducedMotion?.matches,{x:v.x*Math.cos(a)+v.y*Math.sin(a),y:-v.x*Math.sin(a)+v.y*Math.cos(a)});}
 function combat(kind,target,owner=null){
  const key=kind+':'+owner,now=performance.now(),limit=kind==='hit'||kind==='hurt'?90:35;
  if(now-(combatRates.get(key)??-1000)<limit)return;
  combatRates.set(key,now);const e={id:worldSeed+':'+epoch+':'+hostId+':'+(++combatSerial),kind,x:target.x,y:target.y,owner,life:.3};
  combatEvents.push(e);if(combatEvents.length>80)combatEvents.shift();playCombat(e);
 }
-function soundButton(){if(!feedback)return;const b=$('#soundBtn');b.textContent=feedback.isMuted()?'♪ OFF':'♪ ON';b.setAttribute('aria-label',feedback.isMuted()?'Enable sound':'Mute sound');b.setAttribute('aria-pressed',String(!feedback.isMuted()));}
+function soundButton(){if(!feedback)return;const b=$('#soundBtn');b.textContent=feedback.isMuted()?'♪ OFF':'♪ '+['I','II','III','IV','V'][feedback.stage];b.setAttribute('title','Audio '+(feedback.stage+1)+' · '+feedback.name);b.setAttribute('aria-label',feedback.isMuted()?'Enable sound':'Mute sound');b.setAttribute('aria-pressed',String(!feedback.isMuted()));}
 if(feedback){document.addEventListener('pointerdown',()=>feedback.unlock(),{passive:true});document.addEventListener('keydown',()=>feedback.unlock());$('#soundBtn').addEventListener('click',()=>{feedback.unlock();feedback.setMuted(!feedback.isMuted());soundButton();});soundButton();}
 const reducedMotion=window.matchMedia?.('(prefers-reduced-motion: reduce)');
 let enemyScale={power:0,health:1,damage:1,attack:1};
@@ -47,7 +47,7 @@ function switchVisualTier(target){
   const origin={...cameraFocus()};
   for(const p of players){const q=Sphere.step({x:640,y:360,angle:p.angle},p.x-origin.x,p.y-origin.y);p.x=q.x;p.y=q.y;p.angle=q.angle;p.cameraAngle=0;}
  }
- visualTier=target;
+ visualTier=target;feedback?.setTier(target,true);soundButton();
 }
 function screenTarget(x,y){const focus=cameraFocus();return openField()?{x:x+focus.x-W/2,y:y+focus.y-H/2}:{x,y};}
 function fieldSpawn(){const live=activePlayers().filter(p=>p.hp>0),p=live[Math.floor(Math.random()*live.length)]||{x:640,y:360};return offset(p,Math.random()*Math.PI*2,760);}
@@ -210,7 +210,7 @@ function resetInput(){
 }
 function start(m){
  migrating=false;recovering=false;clearTimeout(recoveryTimer);recoveryStatus('');netVisual?.reset();seenDamage.clear();
- resetInput();feedback?.reset();combatEvents=[];combatSerial=0;combatRates.clear();worldSeed=(Math.random()*2147483647)|0;visualTier=0;fractureLeft=0;riftBroken=false;fractureTarget=0;mode=m;wave=0;score=0;enemies=[];shots=[];particles=[];effects=[];damageNumbers=[];damageSerial=0;enemySerial=0;choices=[];drops=[];
+ resetInput();feedback?.reset();soundButton();combatEvents=[];combatSerial=0;combatRates.clear();worldSeed=(Math.random()*2147483647)|0;visualTier=0;fractureLeft=0;riftBroken=false;fractureTarget=0;mode=m;wave=0;score=0;enemies=[];shots=[];particles=[];effects=[];damageNumbers=[];damageSerial=0;enemySerial=0;choices=[];drops=[];
  if(m!=='online')localId=0;
  if(m==='online'){
   for(const [id,seat] of seats)if(seat.connected===false)seats.delete(id);
@@ -698,11 +698,13 @@ function acceptMeta(m){
  saveRoom();
 }
 function restoreState(m,presentation=false){
+ const wasRunning=running;
  if(!presentation){netVisual?.reset();seenDamage.clear();}
  worldSeed=Number.isInteger(m.worldSeed)?m.worldSeed:1;
  P.syncSerial(m.players);
  enemyScale=difficultyScale(m.enemyScale?.power??0);visualTier=[1,1.5,2,3].includes(m.visualTier)?m.visualTier:0;fractureTarget=[1,1.5,2,3].includes(m.fractureTarget)?m.fractureTarget:visualTier;fractureLeft=Number.isFinite(m.fractureLeft)?Math.max(0,Math.min(3,m.fractureLeft)):0;riftBroken=m.riftBroken===true;
  mode='online';roomStarted=true;players=m.players;enemies=m.enemies;shots=m.shots;effects=Array.isArray(m.effects)?m.effects:[];if(presentation){if((m.damageSerial||0)<damageSerial){damageNumbers=[];seenDamage.clear();}mergeDamageNumbers(m.damageNumbers);}else damageNumbers=Array.isArray(m.damageNumbers)?m.damageNumbers.slice(-64):[];damageSerial=m.damageSerial||0;drops=Array.isArray(m.drops)?m.drops:[];enemyShots=Array.isArray(m.enemyShots)?m.enemyShots:[];wave=m.wave;score=m.score;spawnLeft=m.spawnLeft;spawnTimer=m.spawnTimer??.6;bossSpawned=!!m.bossSpawned;enemySerial=m.enemySerial||0;running=m.running;paused=m.paused;between=m.between;choices=m.choices||[];
+ if(feedback?.setTier(visualTier,presentation&&wasRunning))soundButton();
  combatSerial=m.combatSerial||0;combatEvents=Array.isArray(m.combatEvents)?m.combatEvents.slice(-80):[];for(const e of combatEvents)playCombat(e,!presentation);
 }
 function renderLobby(){
@@ -861,7 +863,7 @@ function wire(c,token){
   if(accepting){
    if(!isHost)return;
    if(m.t==='ready'&&!link){
-    if(m.v!==19||typeof m.token!=='string'||m.token.length<16||m.token.length>128){rejectConnection(c,'Refresh to v1.21.0 and join again.');return;}
+    if(m.v!==19||typeof m.token!=='string'||m.token.length<16||m.token.length>128){rejectConnection(c,'Refresh to v1.22.0 and join again.');return;}
     let seat=[...seats.values()].find(s=>s.token===m.token);
     if(seat&&seat.id===localId){rejectConnection(c,'This ship is currently the host.');return;}
     if(!seat){

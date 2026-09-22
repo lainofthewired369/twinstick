@@ -13,7 +13,7 @@ function init(){
   canvas.addEventListener('webglcontextrestored',()=>{lost=false;gl=null;failed=false;});
   const shader=(type,source)=>{const s=gl.createShader(type);gl.shaderSource(s,source);gl.compileShader(s);if(!gl.getShaderParameter(s,gl.COMPILE_STATUS))throw Error(gl.getShaderInfoLog(s));return s;};
   const vs=shader(gl.VERTEX_SHADER,`attribute vec3 position;attribute vec3 normal;attribute vec3 color;varying vec3 tint;uniform float sphereMode;
-   void main(){vec3 light=normalize(vec3(-0.5,-0.8,1.0));float shade=0.38+0.62*max(0.0,dot(normal,light));tint=color*shade;
+   void main(){vec3 light=normalize(vec3(-0.5,-0.8,1.0));float shade=0.38+0.62*max(0.0,dot(normal,light));float gleam=pow(max(0.0,dot(normal,normalize(light+vec3(0.0,0.0,1.0)))),24.0)*0.3*sphereMode;tint=color*shade+vec3(gleam);
    // Oblique orthographic camera: the ground plane keeps exact input coordinates.
    gl_Position=vec4((position.x+position.z*0.45*(1.0-sphereMode))/640.0-1.0,1.0-(position.y-position.z*0.65*(1.0-sphereMode))/360.0,-position.z/1024.0,1.0);}`);
   const fs=shader(gl.FRAGMENT_SHADER,`precision mediump float;varying vec3 tint;void main(){gl_FragColor=vec4(tint,1.0);}`);
@@ -26,8 +26,8 @@ function init(){
  }catch(e){reason=e.message;failed=true;return false;}
 }
 function rgb(c){return palette[c]||(palette[c]=[1,3,5].map(i=>parseInt(c.slice(i,i+2),16)/255));}
-function triangle(a,b,c,color){
- if(sphereMode){const project=p=>{const q=window.RRSphere.project({x:p[0],y:p[1]},focus,p[2]);return [q.x,q.y,q.z];};a=project(a);b=project(b);c=project(c);}
+function triangle(a,b,c,color,projected=false){
+ if(sphereMode&&!projected){const project=p=>{const q=window.RRSphere.project({x:p[0],y:p[1]},focus,p[2]);return [q.x,q.y,q.z];};a=project(a);b=project(b);c=project(c);}
  const u=b.map((v,i)=>v-a[i]),v=c.map((q,i)=>q-a[i]),n=[u[1]*v[2]-u[2]*v[1],u[2]*v[0]-u[0]*v[2],u[0]*v[1]-u[1]*v[0]],len=Math.hypot(...n)||1,t=rgb(color);
  if(used+27>data.length){const larger=new Float32Array(data.length*2);larger.set(data);data=larger;}
  for(const p of [a,b,c]){for(const q of p)data[used++]=q;for(const q of n)data[used++]=q/len;for(const q of t)data[used++]=q;}
@@ -50,6 +50,13 @@ function line(ax,ay,bx,by,z,width,color){
 }
 function ring(x,y,r,z,color,start=0,arc=TAU){for(let i=0;i<32;i++){const a=start+arc*i/32,b=start+arc*(i+1)/32;if(sphereMode){const p=window.RRSphere.step({x,y},Math.cos(a)*r,Math.sin(a)*r),q=window.RRSphere.step({x,y},Math.cos(b)*r,Math.sin(b)*r);line(p.x,p.y,q.x,q.y,z,2,color);}else line(x+Math.cos(a)*r,y+Math.sin(a)*r,x+Math.cos(b)*r,y+Math.sin(b)*r,z,2,color);}}
 function shadow(x,y,r){prism(x+7,y+9,polygon(r,10),.2,0,'#080d20',0,1);}
+function model(type,p,angle,color,scale=1,low=false){
+ const mesh=window.RiftModels?.get(type,low);if(!mesh)return false;
+ const materials={hull:'#536c87',trim:color,dark:'#152639',glass:'#9aecff',engine:'#65eaff',weapon:'#afbed1'},ca=Math.cos(angle),sa=Math.sin(angle);
+ const points=mesh.vertices.map(([vx,vy,vz])=>{const at=pointAt(p.x,p.y,(vx*ca-vy*sa)*scale,(vx*sa+vy*ca)*scale),q=window.RRSphere.project(at,focus,vz*scale);return [q.x,q.y,q.z];});
+ for(const [a,b,c,material] of mesh.faces)triangle(points[a],points[b],points[c],p.hit?'#ffffff':materials[material],true);
+ return true;
+}
 function softwareDraw(){
  if(!software){software=document.createElement('canvas');software.width=960;software.height=540;softwareContext=software.getContext('2d');}
  if(!softwareContext)return false;
@@ -87,10 +94,13 @@ function draw(x,s){
  for(const a of [28,W-40])for(const b of [40,H-22]){box(a,b,18,18,0,30,'#476888');box(a,b,12,12,30,4,'#a5faff');}
  }
  for(const d of s.drops){const c=d.kind==='crate'?'#ffd180':'#7dffd0';shadow(d.x,d.y,8);prism(d.x,d.y,polygon(8,4),4,12,c,s.reduced?0:s.t*.6,.15);}
+ let detailed=0;
+ const visible=p=>!sphereMode||window.RRSphere.project(p,focus).visible;
  for(const e of s.enemies){
-  if(e.hp<=0||e.mirror)continue;const c=e.hit?'#ffffff':colors[e.type]||colors.drone,h=e.type==='boss'?46:e.type==='tank'?26:18;
+  if(e.hp<=0||e.mirror||!visible(e))continue;const c=e.hit?'#ffffff':colors[e.type]||colors.drone,h=e.type==='boss'?46:e.type==='tank'?26:18;
   shadow(e.x,e.y,e.r+4);
   if((e.type==='lancer'||e.beamAttack)&&e.windup>0||e.beamLeft>0){const end=pointAt(e.x,e.y,Math.cos(e.aim)*(sphereMode?600:1000),Math.sin(e.aim)*(sphereMode?600:1000));line(e.x,e.y,end.x,end.y,1,e.beamLeft>0?12:2,e.beamLeft>0?'#fff1ff':'#71345d');}
+  if(sphereMode&&model(e.type,e,e.aim||0,c,e.r/25,!hardware||detailed++>=40)){if(e.slowTime>0)ring(e.x,e.y,e.r+5,3,'#a2efff');continue;}
   const sides=['runner','charger','gunner'].includes(e.type)?3:['tank','sentinel'].includes(e.type)?4:6;
   prism(e.x,e.y,polygon(e.r,sides),2,h,c,e.aim||0,.75);
   prism(e.x,e.y,polygon(e.r*.55,sides),h+2,6,'#20314e',e.aim||0,.6);
@@ -99,13 +109,16 @@ function draw(x,s){
   if(e.slowTime>0)ring(e.x,e.y,e.r+5,3,'#a2efff');
  }
  for(const p of [...s.players,...s.enemies.filter(e=>e.mirror).map(e=>({...e,angle:e.aim,color:e.hit?'#ffffff':e.color}))]){
-  if(p.hp<=0)continue;shadow(p.x,p.y,27);
+  if(p.hp<=0||!visible(p))continue;shadow(p.x,p.y,27);
+  const modeled=sphereMode&&model('ship',p,p.angle,p.color,p.mirror?1.15:.85,!hardware);
+  if(!modeled){
   prism(p.x,p.y,[[30,0],[-19,20],[-10,0],[-19,-20]],3,12,p.color,p.angle,.65);
   prism(p.x,p.y,[[16,0],[-8,7],[-8,-7]],15,8,'#d4f8ff',p.angle,.4);
+  }
   for(let n=0;n<(p.weapons?.length||1);n++){const side=n%2?1:-1,px=-7-Math.floor(n/2)*5,py=side*(13+Math.floor(n/2)*4),ca=Math.cos(p.angle),sa=Math.sin(p.angle),at=pointAt(p.x,p.y,px*ca-py*sa,px*sa+py*ca);box(at.x,at.y,21,4,9,6,'#a7c3df',p.angle);}
   const length=s.reduced?19:19+Math.sin(s.t*24)*4;
   const engine=pointAt(p.x,p.y,-Math.cos(p.angle)*19,-Math.sin(p.angle)*19);prism(engine.x,engine.y,[[0,-6],[-length,0],[0,6]],5,4,'#7feeff',p.angle,.25);
-  if(sphereMode){prism(p.x,p.y,polygon(6,8),22,5,'#88e8ff',0,.6);for(const side of [-1,1]){const at=pointAt(p.x,p.y,Math.cos(p.angle+side*1.7)*16,Math.sin(p.angle+side*1.7)*16);prism(at.x,at.y,polygon(4,6),13,5,'#f1ffff',0,.7);}}
+  if(sphereMode&&!modeled){prism(p.x,p.y,polygon(6,8),22,5,'#88e8ff',0,.6);for(const side of [-1,1]){const at=pointAt(p.x,p.y,Math.cos(p.angle+side*1.7)*16,Math.sin(p.angle+side*1.7)*16);prism(at.x,at.y,polygon(4,6),13,5,'#f1ffff',0,.7);}}
   if(p.shield>0)ring(p.x,p.y,33,10,p.color);
  }
  for(const b of s.shots){const a=Math.atan2(b.vy,b.vx);box(b.x,b.y,Math.max(8,(b.r||3)*3),Math.max(3,b.r||3),6,4,b.color||'#7dffd0',a);}
