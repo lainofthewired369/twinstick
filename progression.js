@@ -62,13 +62,15 @@ function open(p,wave,weaponIds){p.materials+=10+wave*2+p.harvest;if(p.hp>0)p.hp=
 function partner(p,w){return p.weapons.find(s=>s.uid!==w.uid&&s.id===w.id&&s.tier===w.tier&&s.tier<4);}
 function sellValue(w,wave){return Math.max(1,Math.floor(price(w.id,w.tier,wave)*.4));}
 function rerollCost(p,wave){return 3+wave+p.rerolls*3;}
+function lifeCost(p){return 25+15*Math.max(0,p.lives??10);}
 function action(p,m,wave,weaponIds){
  if(!m||m.wave!==wave||m.revision!==p.revision)return false;
  const w=p.weapons.find(w=>w.uid===m.uid),o=p.shop.find(o=>o?.uid===m.uid);
  if(m.action==='ready'){if(p.pending)return false;p.ready=!p.ready;}
  else {
-  if(p.ready)return false;
-  if(m.action==='buy'){if(!o||p.materials<o.cost)return false;const same=p.weapons.find(w=>w.id===o.id&&w.tier===o.tier&&w.tier<4);if(o.kind==='weapon'&&p.weapons.length>=6&&!same)return false;p.materials-=o.cost;if(o.kind==='weapon'){if(p.weapons.length>=6){same.tier++;}else p.weapons.push(weapon(o.id,o.tier));}else {applyItem(p,o.id,o.tier);p.items.push({id:o.id,tier:o.tier});}p.shop[p.shop.indexOf(o)]=null;}
+  if(p.ready&&!(m.action==='life'&&p.hp<=0))return false;
+  if(m.action==='life'){const cost=lifeCost(p);if(p.materials<cost)return false;p.materials-=cost;p.lives=(p.lives??10)+1;}
+  else if(m.action==='buy'){if(!o||p.materials<o.cost)return false;const same=p.weapons.find(w=>w.id===o.id&&w.tier===o.tier&&w.tier<4);if(o.kind==='weapon'&&p.weapons.length>=6&&!same)return false;p.materials-=o.cost;if(o.kind==='weapon'){if(p.weapons.length>=6){same.tier++;}else p.weapons.push(weapon(o.id,o.tier));}else {applyItem(p,o.id,o.tier);p.items.push({id:o.id,tier:o.tier});}p.shop[p.shop.indexOf(o)]=null;}
   else if(m.action==='combine'){const other=w&&partner(p,w);if(!other)return false;w.tier++;p.weapons.splice(p.weapons.indexOf(other),1);}
   else if(m.action==='sell'){if(!w||p.weapons.length<=1)return false;p.materials+=sellValue(w,wave);p.weapons.splice(p.weapons.indexOf(w),1);}
   else if(m.action==='lock'){if(!o)return false;o.locked=!o.locked;}
@@ -80,6 +82,6 @@ function action(p,m,wave,weaponIds){
  p.revision++;return true;
 }
 function loot(p,id){if(p.weapons.length<6)p.weapons.push(weapon(id));else {const w=p.weapons.find(w=>w.id===id&&w.tier===1);if(w)w.tier++;else p.materials+=12;}}
-const api={skills:S,syncSerial,tiers,characters,stats,items,applyItem,starters,weapon,config,init,threshold,grant,apply,rarity,price,restock,open,partner,sellValue,rerollCost,action,loot};
+const api={skills:S,syncSerial,tiers,characters,stats,items,applyItem,starters,weapon,config,init,threshold,grant,apply,rarity,price,restock,open,partner,sellValue,rerollCost,lifeCost,action,loot};
 if(typeof module!=='undefined')module.exports=api;else window.RRProgress=api;
 })();

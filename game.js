@@ -99,14 +99,14 @@ function shopAction(action,uid,stat){
  const m={t:'shop',action,uid,stat,wave,revision:p.revision};
  if(mode==='online'&&!isHost)send(m);else applyShop(id,m);
 }
-function applyShop(id,m){if(!running||!between||fractureLeft>0||migrating||!players[id]||players[id].hp<=0||players[id].connected===false||!P.action(players[id],m,wave,Object.keys(weapons)))return;lastUI='';if(activePlayers().every(p=>p.ready)){nextWave();paused=false;resetInput();show('none');}sendState();}
+function applyShop(id,m){if(!running||!between||fractureLeft>0||migrating||!players[id]||(players[id].hp<=0&&m.action!=='life')||players[id].connected===false||!P.action(players[id],m,wave,Object.keys(weapons)))return;lastUI='';if(activePlayers().every(p=>p.ready)){nextWave();paused=false;resetInput();show('none');}sendState();}
 function button(parent,label,fn,disabled=false){const b=document.createElement('button');b.textContent=label;b.disabled=disabled;b.onclick=fn;parent.append(b);return b;}
 function renderShop(){
  const p=players[mode==='local'?shopPlayer:localId];if(!p)return;
  $('#shopTitle').textContent=P.characters[p.character].name+' · '+shipName(p.id)+' ship';
  $('#shopStats').textContent=p.materials+' materials · Level '+p.level+' · XP '+p.xp+'/'+P.threshold(p)+' · HP '+Math.ceil(p.hp)+'/'+p.maxHp+' · LIVES '+(p.lives??10)+(p.downed?' · DOWN · REVIVE '+(10-(p.reviveProgress||0)).toFixed(1)+'s':p.hp<=0?' · ELIMINATED':'')+' · Damage '+Math.round(p.damage/22*100)+'% · Armor '+p.armor+' · Regen '+p.regen.toFixed(1)+'/s · Luck '+p.luck+' · Harvest '+p.harvest+' · Crit '+Math.round(p.crit*100)+'%';
  $('#shopHint').textContent=p.hp<=0?(p.downed?'Downed · automatically ready. Teammates can finish reviving you next wave.':'Eliminated · watching the team.') :p.ready?'Ready. Waiting for the rest of the team.':p.pending?'Choose '+p.pending+' level upgrade(s), then shop and mark Ready.':'Buy equipment, combine matching tiers, then mark Ready.';
- $('#shop').classList.toggle('level-pending',p.pending>0);$('#levelChoices').replaceChildren();for(const stat of p.levelChoices)button($('#levelChoices'),P.stats[stat].name+' — '+P.stats[stat].desc,()=>shopAction('level',null,stat),p.ready);
+ $('#shop').classList.toggle('level-pending',p.pending>0&&p.hp>0);$('#levelChoices').replaceChildren();for(const stat of p.levelChoices)button($('#levelChoices'),P.stats[stat].name+' — '+P.stats[stat].desc,()=>shopAction('level',null,stat),p.ready);
  $('#offers').replaceChildren();
  for(const o of p.shop){const card=document.createElement('article');card.className='shop-card';$('#offers').append(card);if(!o){card.textContent='SOLD';continue;}const t=P.tiers[o.tier];card.style.borderColor=t.color;const label=o.kind==='weapon'?weapons[o.id]:(P.items[o.id]||P.stats[o.id]);const text=document.createElement('p');text.textContent=(label.icon?label.icon+' ':'')+t.name+' '+label.name+' · '+(o.kind==='weapon'?Math.round(t.power*100)+'% base damage':label.desc+' ×'+o.tier);card.append(text);const full=o.kind==='weapon'&&p.weapons.length>=6,merge=full&&p.weapons.some(w=>w.id===o.id&&w.tier===o.tier&&w.tier<4);button(card,(full&&!merge?'FULL · ':merge?'BUY + COMBINE · ':'BUY · ')+o.cost,()=>shopAction('buy',o.uid),p.ready||p.materials<o.cost||(full&&!merge));button(card,o.locked?'UNLOCK':'LOCK',()=>shopAction('lock',o.uid),p.ready);}
  $('#inventory').replaceChildren();for(const w of p.weapons){const row=document.createElement('article');row.className='shop-card';row.style.borderColor=P.tiers[w.tier].color;const text=document.createElement('p');text.textContent=P.tiers[w.tier].name+' '+weapons[w.id].name+' · '+Math.round(P.tiers[w.tier].power*100)+'% damage';row.append(text);button(row,'COMBINE → '+(P.tiers[w.tier+1]?.name||'MAX'),()=>shopAction('combine',w.uid),p.ready||!P.partner(p,w));button(row,'SELL · '+P.sellValue(w,wave),()=>shopAction('sell',w.uid),p.ready||p.weapons.length<=1);$('#inventory').append(row);}
@@ -115,13 +115,15 @@ function renderShop(){
  $('#shopWallet').textContent=p.materials+' ◇';
  for(const tab of ['offers','inventory','items','stats']){$('#pane-'+tab).classList.toggle('hidden',shopTab!==tab);$('#tab-'+tab).classList.toggle('selected',shopTab===tab);}
 
+ $('#buyLife').textContent='BUY LIFE · '+P.lifeCost(p)+' ◇';$('#buyLife').disabled=(p.ready&&p.hp>0)||p.materials<P.lifeCost(p);
  $('#reroll').textContent='REROLL · '+P.rerollCost(p,wave);$('#reroll').disabled=p.ready||p.materials<P.rerollCost(p,wave)||p.shop.every(o=>o?.locked);
  $('#readyShop').textContent=p.hp<=0?'AUTO READY':p.ready?'CANCEL READY':'READY · NEXT WAVE';$('#readyShop').disabled=p.hp<=0||!!p.pending;
  $('#switchShop').classList.toggle('hidden',mode!=='local');
  $('#teamReady').textContent=activePlayers().filter(p=>p.ready).length+'/'+activePlayers().length+' ready · '+activePlayers().filter(p=>!p.ready).map(p=>'P'+(p.id+1)).join(', ');
 }
 const RAM_COOLDOWN=30,RAM_TIME=.45,RAM_IFRAMES=.15,RAM_SPEED=900;
-function turnAim(current,target,dt){const d=Math.atan2(Math.sin(target-current),Math.cos(target-current));return current+Math.max(-3*dt,Math.min(3*dt,d));}
+function bossRelief(){return wave>=6&&wave<=15&&activePlayers().some(p=>p.hp>0&&p.hp/p.maxHp<=.35);}
+function turnAim(current,target,dt){const d=Math.atan2(Math.sin(target-current),Math.cos(target-current)),speed=1.2*(bossRelief()?.5:1);return current+Math.max(-speed*dt,Math.min(speed*dt,d));}
 function frontGuard(p,source){if(!(p.ramLeft>0)||!source)return 1;const a=aimAt(p,source)-(p.ramAngle||0);return Math.cos(a)>.5?.3:1;}
 function startRam(p,angle){
  if(p.hp<=0||(p.dash||0)>0||p.ramLeft>0)return false;
@@ -132,7 +134,7 @@ function startRam(p,angle){
 }
 function tickRam(p,dt){
  if(!(p.ramLeft>0))return false;
- const ramSpeed=RAM_SPEED*(p.type==='boss'?.65:1),step=Math.min(dt,p.ramLeft),from={x:p.x,y:p.y},a=p.ramAngle;
+ const ramSpeed=RAM_SPEED*(p.type==='boss'?.65*(bossRelief()?.8:1):1),step=Math.min(dt,p.ramLeft),from={x:p.x,y:p.y},a=p.ramAngle;
  const next=onSphere()?Sphere.step({...p,angle:a},Math.cos(a)*ramSpeed,Math.sin(a)*ramSpeed,step):null;
  travel(p,Math.cos(a)*ramSpeed,Math.sin(a)*ramSpeed,step);if(next)p.ramAngle=next.angle;
  if(boundedArena()){p.x=Math.max(18,Math.min(W-18,p.x));p.y=Math.max(18,Math.min(H-18,p.y));}
@@ -257,13 +259,14 @@ function buildMirror(e){
  e.hp=e.maxHp=Math.max(e.hp,(ehp*advantage+dps*(9+wave*.2))/(1+e.armor*.08));
  // A modest early/mid-run relief; later bosses keep the full scaling curve.
  if(wave>=3&&wave<=15){e.hp*=.8;e.maxHp*=.8;e.shield*=.8;e.maxShield*=.8;e.damage*=.85;e.nominalDps*=.85;e.advantage*=.85;}
+ if(wave>=6&&wave<=15){e.hp*=.8;e.maxHp*=.8;e.shield*=.8;e.maxShield*=.8;e.damage*=.8;e.nominalDps*=.8;e.advantage*=.8;}
  e.healBudget=e.maxHp*.2;e.attack=.9;e.evade=0;e.novaWarning=0;e.orbitTime=0;
  e.preferredRange=Math.min(...e.weapons.map(s=>{const w=weapons[s.id];return w.arc?w.reach*.8:w.burn?110:300;}));
 }
 function healMirror(e,amount){const heal=Math.min(Math.max(0,amount),e.healBudget,e.maxHp-e.hp);e.hp+=heal;e.healBudget-=heal;}
 function mirrorHit(e,p,damage,extra={}){
  if(p.hp<=0||p.invuln>0||p.dash>=p.dashTime-.15)return false;
- const before=p.hp;damagePlayer(p,damage,extra.source||e);p.invuln=.2;
+ const before=p.hp;damagePlayer(p,damage,{...(extra.source||e),bossDamage:true});p.invuln=.2;
  if(extra.burn){p.enemyBurn=2;p.enemyBurnDamage=damage*.2;}
  if(e){healMirror(e,Math.max(0,before-p.hp)*(e.leech||0));if(e.slow){p.enemySlow=e.slow;p.enemySlowTime=1;}}
  if(e?.abilities.chain&&(e.abilityTimers.chain||0)<=0){e.abilityTimers.chain=.45;const others=activePlayers().filter(q=>q!==p&&q.hp>0&&distance(q,p)<170).slice(0,2);for(const q of others){effect({kind:'beam',x:p.x,y:p.y,bx:q.x,by:q.y,color:e.color});mirrorHit(e,q,damage*.35);}}
@@ -286,18 +289,19 @@ function mirrorFire(e,slot,angle){
  }
 }
 function mirrorCombat(e,dt){
- e.windup=Math.max(0,...e.weapons.map(s=>s.pending||0));e.abilityTimers.chain=Math.max(0,(e.abilityTimers.chain||0)-dt);e.attack=Math.max(0,e.attack-dt);e.orbitTime+=dt*2.8;
+ e.mercy=bossRelief();const attackDt=dt*(e.mercy?.75:1);
+ e.windup=Math.max(0,...e.weapons.map(s=>s.pending||0));e.abilityTimers.chain=Math.max(0,(e.abilityTimers.chain||0)-dt);e.attack=Math.max(0,e.attack-attackDt);e.orbitTime+=dt*2.8;
  const target=rivalThink(e,dt);bossRam(e,target,dt);healMirror(e,e.regen*dt);e.shieldDelay=Math.max(0,(e.shieldDelay||0)-dt);if(!e.shieldDelay){const recharge=Math.min(e.healBudget,e.maxShield-e.shield,e.maxShield*.15*dt);e.shield+=recharge;e.healBudget-=recharge;}if(!target||e.attack>0)return;
  e.aim=turnAim(e.aim,aimAt(e,target),dt);
  for(const slot of e.weapons){
-  const w=weapons[slot.id];slot.cool=Math.max(0,slot.cool-dt);
+  const w=weapons[slot.id];slot.cool=Math.max(0,slot.cool-attackDt);
   if(slot.pending>0){slot.shotAim=e.aim;slot.pending=Math.max(0,slot.pending-dt);if(slot.pending===0)mirrorFire(e,slot,slot.shotAim);continue;}
   if(slot.cool>0)continue;
   slot.spin=Math.min(1,slot.spin+dt);const rate=w.rate*e.rate/.18/(slot.id==='minigun'?1+slot.spin*2:1);
   if(w.reach){slot.pending=w.arc?.55:.9;slot.shotAim=e.aim;slot.cool=Math.max(rate,slot.pending+.12);}else {mirrorFire(e,slot,e.aim);slot.cool=Math.max(.06,rate);}
  }
  if(e.novaWarning>0){e.novaWarning=Math.max(0,e.novaWarning-dt);if(!e.novaWarning){effect({kind:'blast',x:e.x,y:e.y,r:110,color:e.color});for(const p of activePlayers())if(distance(e,p)<125)mirrorHit(e,p,e.damage*2);}}
- for(const k of ['blades','repair','missiles']){if(!e.abilities[k])continue;e.abilityTimers[k]=Math.max(0,(e.abilityTimers[k]||0)-dt);if(e.abilityTimers[k]>0)continue;
+ for(const k of ['blades','repair','missiles']){if(!e.abilities[k])continue;e.abilityTimers[k]=Math.max(0,(e.abilityTimers[k]||0)-attackDt);if(e.abilityTimers[k]>0)continue;
   if(k==='repair'){e.abilityTimers[k]=4;healMirror(e,8);for(const ally of enemies)if(ally!==e&&ally.hp>0&&distance(e,ally)<160&&ally.maxHp)ally.hp=Math.min(ally.maxHp,ally.hp+8);effect({kind:'blast',x:e.x,y:e.y,r:80,color:e.color});}
   if(k==='missiles'){e.abilityTimers[k]=2;mirrorProjectile(e,e.aim,{speed:370,life:2.5,blast:80},32*e.damage/22);}
   if(k==='blades'){e.abilityTimers[k]=.3;for(let n=0;n<2;n++){const at=offset(e,e.orbitTime+n*Math.PI,58);for(const p of activePlayers())if(distance(at,p)<28)mirrorHit(e,p,e.damage*.7);}}
@@ -337,7 +341,7 @@ function rivalThink(e,dt){
   const radial=Math.max(-1,Math.min(1,(d-preferred)/100));
   const strafe=(Math.abs(h.orbit)>.25?-Math.sign(h.orbit):b.turn)*(.6+.25*confidence);
   // React to an already-visible bullet, with a cooldown rather than invulnerability.
-  const boost=b.dodge>2.15?1.8:1,speed=(e.mirror?e.speed:115+Math.min(45,wave*2))*(e.mirror?1:boost)*(e.slowTime>0?1-e.slow:1);
+  const boost=b.dodge>2.15?1.8:1,speed=(e.mirror?e.speed:115+Math.min(45,wave*2))*(e.mirror?1:boost)*(e.mirror&&bossRelief()?.8:1)*(e.slowTime>0?1-e.slow:1);
   const length=Math.max(1,Math.hypot(radial,strafe));let vx=(Math.cos(a)*radial-Math.sin(a)*strafe)*speed/length,vy=(Math.sin(a)*radial+Math.cos(a)*strafe)*speed/length;
   if(boundedArena()){if(e.x<e.r+25&&vx<0||e.x>W-e.r-25&&vx>0)vx=-vx;if(e.y<e.r+25&&vy<0||e.y>H-e.r-25&&vy>0)vy=-vy;}
   travel(e,vx,vy,dt);
@@ -362,7 +366,7 @@ function bossAttack(e,target,dt){
   for(let n=0;n<count;n++){const angle=phase===1?n*Math.PI*2/count+e.aim:phase===2?e.aim+(n-4)*.13:e.aim+(n-2)*.18;hostileShot(e,angle,speed*(phase===2?.8:1),(16+wave*.8)*e.power.damage);}
   if(wave>=15)for(let n=0;n<12;n++)hostileShot(e,n*Math.PI/6+e.aim,190,(12+wave*.5)*e.power.damage);
   e.pattern++;e.attack=(angry?.85:1.4)/(e.power.attack*enemyScale.attack*attackPressure());
- }else{e.attack-=dt;if(e.attack<=0){e.aim=aimAt(e,target);if(e.rival&&e.brain.clock-(e.brain.dashObserved??-99)<.8)e.pattern=0;e.beamAttack=wave>=15&&e.pattern%4===3;e.windup=e.beamAttack?1.2:.8;}}
+ }else{e.attack-=dt;if(e.attack<=0){if(e.rival&&e.brain.clock-(e.brain.dashObserved??-99)<.8)e.pattern=0;e.beamAttack=wave>=15&&e.pattern%4===3;e.windup=e.beamAttack?1.2:.8;}}
 }
 const enemyTypes={
  drone:{color:'#ff597e',r:14,hp:35,speed:96},tank:{color:'#ffcb68',r:22,hp:95,speed:55},
@@ -392,6 +396,7 @@ function enemyAttack(e,t,dt){
 }
 function damagePlayer(p,damage,source=null){
  if(p.hp<=0||p.invuln>0||!Number.isFinite(damage)||damage<=0)return;
+ if((source?.type==='boss'||source?.bossDamage)&&bossRelief())damage*=.7;
  damage*=frontGuard(p,source);p.shieldDelay=4;const absorbed=Math.min(p.shield,damage);p.shield-=absorbed;
  const actual=Math.min(p.hp,(damage-absorbed)/(1+p.armor*.08/(1+Math.max(0,wave-7)*.045)));
  p.hp=Math.max(0,p.hp-actual);if(p.hp===0){p.lives=p.lives??10;p.downed=true;p.reviveProgress=0;p.ramLeft=0;p.enemyBurn=0;p.enemySlowTime=0;}damageNumber(p,absorbed,'shield','player');damageNumber(p,actual,'hurt','player');
@@ -521,7 +526,7 @@ function move(p,i,dt){
  p.hp=Math.min(p.maxHp,p.hp+p.regen*dt*healingEfficiency());p.invuln=Math.max(0,(p.invuln||0)-dt);p.shieldDelay=Math.max(0,p.shieldDelay-dt);if(!p.shieldDelay)p.shield=Math.min(p.maxShield,p.shield+p.maxShield*.15*dt*healingEfficiency());
  for(const s of p.weapons){s.cool=Math.max(0,s.cool-dt);s.spin=i.fire?Math.min(1,s.spin+dt):0;}p.dash=Math.max(0,p.dash-dt);p.angle=i.angle;if(i.dash)startRam(p,p.angle);
  const frame=controlAngle(p),c=Math.cos(frame),s=Math.sin(frame),mx=i.dx*c-i.dy*s,my=i.dx*s+i.dy*c;
- p.enemySlowTime=Math.max(0,(p.enemySlowTime||0)-dt);const moveScale=p.enemySlowTime>0?1-(p.enemySlow||0):1;if(!tickRam(p,dt))travel(p,mx*p.speed*moveScale,my*p.speed*moveScale,dt);if(p.enemyBurn>0){p.enemyBurn=Math.max(0,p.enemyBurn-dt);if(!p.invuln&&p.dash<p.dashTime-.15)damagePlayer(p,p.enemyBurnDamage*dt);}
+ p.enemySlowTime=Math.max(0,(p.enemySlowTime||0)-dt);const moveScale=p.enemySlowTime>0?1-(p.enemySlow||0):1;if(!tickRam(p,dt))travel(p,mx*p.speed*moveScale,my*p.speed*moveScale,dt);if(p.enemyBurn>0){p.enemyBurn=Math.max(0,p.enemyBurn-dt);if(!p.invuln&&p.dash<p.dashTime-.15)damagePlayer(p,p.enemyBurnDamage*dt,{bossDamage:true});}
 
  if(boundedArena()){p.x=Math.max(18,Math.min(W-18,p.x));p.y=Math.max(18,Math.min(H-18,p.y));}if(i.fire)shoot(p);tickAbilities(p,dt);
 }
@@ -575,7 +580,7 @@ function ui(){
   $('#wave').textContent=wave;$('#hostiles').textContent=enemies.length+spawnLeft;$('#score').textContent=score;
   $('#mode').textContent=mode==='online'?((isHost?'HOST · ':'')+shipName(localId)+' · '+activePlayers().length+'/8'):mode.toUpperCase();
  }
- const boss=enemies.find(e=>e.type==='boss'&&e.hp>0);$('#bossHud').classList.toggle('hidden',!boss||!running||between);if(boss){$('#bossName').textContent=(boss.mirror?'MIRROR P'+(boss.sourceId+1)+' · '+(boss.tactic||'OBSERVING'):boss.rival?'RIVAL · '+(boss.tactic||'OBSERVING'):'WARDEN')+' · W'+wave+(boss.mirror?' · TEAM ×'+boss.advantage.toFixed(2):' · POWER ×'+(boss.power.health*enemyScale.health).toFixed(1))+(boss.ramWarning>0?' · RAM INCOMING':boss.windup?' · INCOMING':'');$('#bossBar').value=boss.hp;$('#bossBar').max=boss.maxHp;}
+ const boss=enemies.find(e=>e.type==='boss'&&e.hp>0);$('#bossHud').classList.toggle('hidden',!boss||!running||between);if(boss){$('#bossName').textContent=(boss.mirror?'MIRROR P'+(boss.sourceId+1)+' · '+(boss.tactic||'OBSERVING'):boss.rival?'RIVAL · '+(boss.tactic||'OBSERVING'):'WARDEN')+' · W'+wave+(boss.mirror?' · TEAM ×'+boss.advantage.toFixed(2):' · POWER ×'+(boss.power.health*enemyScale.health).toFixed(1))+(boss.mercy?' · LOW-HEALTH RELIEF':'')+(boss.ramWarning>0?' · RAM INCOMING':boss.windup?' · INCOMING':'');$('#bossBar').value=boss.hp;$('#bossBar').max=boss.maxHp;}
  $('main').classList.toggle('rift-evolved',visualTier>=1);
  const active=running&&!paused&&!between&&!migrating&&fractureLeft<=0&&overlay==='none';
  $('#touch').classList.toggle('active',active);
@@ -828,7 +833,7 @@ function wire(c,token){
   if(accepting){
    if(!isHost)return;
    if(m.t==='ready'&&!link){
-    if(m.v!==18||typeof m.token!=='string'||m.token.length<16||m.token.length>128){rejectConnection(c,'Refresh to v1.19.0 and join again.');return;}
+    if(m.v!==18||typeof m.token!=='string'||m.token.length<16||m.token.length>128){rejectConnection(c,'Refresh to v1.20.0 and join again.');return;}
     let seat=[...seats.values()].find(s=>s.token===m.token);
     if(seat&&seat.id===localId){rejectConnection(c,'This ship is currently the host.');return;}
     if(!seat){
@@ -927,6 +932,7 @@ $$('[data-action]').forEach(b=>b.onclick=async()=>{
  if(a==='restart'&&(mode!=='online'||isHost))start(mode);
  if(a==='copy'){try{if(!$('#roomPassword').value)return;await navigator.clipboard.writeText($('#roomPassword').value);netStatus('Password copied. Send it to your teammates.');}catch(e){$('#roomPassword').select();netStatus('Select and copy the password above.');}}
 });
+$('#buyLife').onclick=()=>shopAction('life');
 $('#reroll').onclick=()=>shopAction('reroll');
 $('#readyShop').onclick=()=>shopAction('ready');
 $('#switchShop').onclick=()=>{shopPlayer=1-shopPlayer;lastUI='';ui();};
