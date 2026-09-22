@@ -6,9 +6,18 @@ const tiers=[null,{name:'Common',color:'#b8c8d8',power:1},{name:'Uncommon',color
 const characters={
  ranger:{name:'Ranger',unlock:0,desc:'Balanced ship · +10% damage',damage:1.1},
  scout:{name:'Scout',unlock:3,desc:'+20% speed · +50% pickup range · −20 HP',speed:1.2,hp:-20,pickup:1.5},
- bulwark:{name:'Bulwark',unlock:5,desc:'+40 HP · +4 armor · −15% speed',hp:40,armor:4,speed:.85},
+ bulwark:{name:'Bulwark',unlock:5,reach:true,desc:'+40 HP · +4 armor · −15% speed',hp:40,armor:4,speed:.85},
+ vanguard:{name:'Vanguard',unlock:10,reach:true,desc:'+25% damage · +2 armor · −10% speed',damage:1.25,armor:2,speed:.9},
+ spectre:{name:'Spectre',unlock:15,reach:true,desc:'+30% speed · +25 luck · −25 HP',speed:1.3,luck:25,hp:-25},
  engineer:{name:'Engineer',unlock:8,desc:'+8 harvesting · +20 luck · −10% damage',harvest:8,luck:20,damage:.9}
 };
+const hulls={ranger:[[29,0],[-16,-18],[-9,0],[-16,18]],scout:[[34,0],[-22,-11],[-13,0],[-22,11]],bulwark:[[24,-10],[24,10],[-18,24],[-25,12],[-25,-12],[-18,-24]],engineer:[[26,0],[8,-12],[-6,-24],[-24,-24],[-12,0],[-24,24],[-6,24],[8,12]],vanguard:[[32,0],[4,-12],[-22,-28],[-10,-5],[-18,0],[-10,5],[-22,28],[4,12]],spectre:[[36,0],[-26,-23],[-8,-5],[-20,0],[-8,5],[-26,23]]};
+function mount(p,index,sphere){
+ const a=p.angle||0,count=Math.max(1,p.weapons?.length||1),rad=count===1?a:a+Math.PI/2+index*Math.PI*2/count;
+ const step=(q,angle,d)=>sphere?sphere.step({...q,angle},Math.cos(angle)*d,Math.sin(angle)*d):{x:q.x+Math.cos(angle)*d,y:q.y+Math.sin(angle)*d,angle};
+ const base=step(p,rad,34),target=step(p,a,Math.max(60,Math.min(1200,p.aimDistance||550))),d=sphere?sphere.delta(base,target):{x:target.x-base.x,y:target.y-base.y};
+ base.angle=Math.atan2(d.y,d.x);return {...base,tip:step(base,base.angle,17)};
+}
 const stats={damage:{name:'Damage',desc:'+15% damage'},rate:{name:'Attack speed',desc:'+12% firing speed'},health:{name:'Vitality',desc:'+15 maximum HP'},speed:{name:'Mobility',desc:'+8% movement speed'},armor:{name:'Armor',desc:'+2 armor'},regen:{name:'Regeneration',desc:'+0.5 HP per second'},luck:{name:'Luck',desc:'+10 luck: better shop rarities'},harvest:{name:'Harvesting',desc:'+4 materials each wave'},crit:{name:'Critical chance',desc:'+5% chance of double damage'}};
 const items={
  scope:{name:'Longshot Scope',icon:'⌖',desc:'+15% weapon range',mods:{range:.15}},
@@ -71,6 +80,7 @@ function action(p,m,wave,weaponIds){
   if(p.ready&&!(m.action==='life'&&p.hp<=0))return false;
   if(m.action==='life'){const cost=lifeCost(p);if(p.materials<cost)return false;p.materials-=cost;p.lives=(p.lives??10)+1;}
   else if(m.action==='buy'){if(!o||p.materials<o.cost)return false;const same=p.weapons.find(w=>w.id===o.id&&w.tier===o.tier&&w.tier<4);if(o.kind==='weapon'&&p.weapons.length>=6&&!same)return false;p.materials-=o.cost;if(o.kind==='weapon'){if(p.weapons.length>=6){same.tier++;same.source='shop';}else p.weapons.push(weapon(o.id,o.tier,'shop'));}else {applyItem(p,o.id,o.tier);p.items.push({id:o.id,tier:o.tier,source:'shop'});}p.shop[p.shop.indexOf(o)]=null;}
+  else if(m.action==='shop-combine'){if(!o||o.kind!=='weapon'||o.tier>=4||p.materials<o.cost)return false;const match=p.weapons.find(w=>w.id===o.id&&w.tier===o.tier);if(!match)return false;p.materials-=o.cost;match.tier++;match.source='combined';p.shop[p.shop.indexOf(o)]=null;}
   else if(m.action==='combine'){const other=w&&partner(p,w);if(!other)return false;w.tier++;w.source='combined';p.weapons.splice(p.weapons.indexOf(other),1);}
   else if(m.action==='sell'){if(!w||p.weapons.length<=1)return false;p.materials+=sellValue(w,wave);p.weapons.splice(p.weapons.indexOf(w),1);}
   else if(m.action==='lock'){if(!o)return false;o.locked=!o.locked;}
@@ -82,6 +92,6 @@ function action(p,m,wave,weaponIds){
  p.revision++;return true;
 }
 function loot(p,id){if(p.weapons.length<6)p.weapons.push(weapon(id,1,'shared-crate'));else {const w=p.weapons.find(w=>w.id===id&&w.tier===1);if(w){w.tier++;w.source='shared-crate';}else p.materials+=12;}p.revision++;}
-const api={skills:S,syncSerial,tiers,characters,stats,items,applyItem,starters,weapon,config,init,threshold,grant,apply,rarity,price,restock,open,partner,sellValue,rerollCost,lifeCost,action,loot};
+const api={hulls,mount,skills:S,syncSerial,tiers,characters,stats,items,applyItem,starters,weapon,config,init,threshold,grant,apply,rarity,price,restock,open,partner,sellValue,rerollCost,lifeCost,action,loot};
 if(typeof module!=='undefined')module.exports=api;else window.RRProgress=api;
 })();

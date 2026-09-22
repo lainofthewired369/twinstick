@@ -241,3 +241,10 @@ Measured synthetic stress case on the development runner: 8 players, 160 enemies
 Ownership audit: shop actions are bound to the sender's connection, and foreign weapon/offer IDs are rejected. Eight-player regression tests and the real WebRTC test cover independent weapon/item purchases and preservation of inventories during compact updates. Supply crates intentionally reward every player; weapon cards now distinguish shared-crate rewards, personal shop purchases, starters and combined equipment. The shop says YOUR SHIP and includes the player ID in its UI refresh key. Crate rewards now increment inventory revision as well.
 
 Protocol 20 requires all players to refresh to v1.23.0 and create a fresh room. The release also includes the v1.22 audio and mesh-model evolution at boss milestones 5, 7, 10 and 15.
+
+### v1.24.0 — ship selection and mounted weapons
+Starting solo, local or online now opens ship selection, with distinct hull previews and starter selection. Bulwark unlocks on reaching wave 5, Vanguard at 10 and Spectre at 15. Scout and Engineer retain their existing clear-wave unlocks. Progress is saved per browser; unlocks become available for the next run. Vanguard has +25% damage, +2 armor and -10% speed; Spectre has +30% speed, +25 luck and -25 HP.
+
+Matching shop offers now have COMBINE: spend the shown price to consume that offer and upgrade a matching owned weapon of the same rarity, even with six slots filled. Buying a separate copy and combining owned duplicates remain available. Epic weapons cannot combine further.
+
+Weapons occupy mounts around the hull and fire from their barrels. Mouse aim converges at the cursor; touch/controller aim converges along the chosen direction. Mount coordinates are shared by firing and both renderers, including sphere movement. Weapon rarity colors and wide/narrow weapon bodies distinguish equipment. Protocol 21: refresh every player before creating a room.

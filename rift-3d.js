@@ -117,13 +117,15 @@ function draw(x,s){
   if(p.hp<=0||!visible(p))continue;shadow(p.x,p.y,27);
   const modeled=sphereMode&&model('ship',p,p.angle,p.color,p.mirror?1.15:.85,!hardware);
   if(!modeled){
-  prism(p.x,p.y,[[30,0],[-19,20],[-10,0],[-19,-20]],3,12,p.color,p.angle,.65);
+  prism(p.x,p.y,(window.RRProgress?.hulls[p.character]||[[30,0],[-19,20],[-10,0],[-19,-20]]),3,12,p.color,p.angle,.65);
   prism(p.x,p.y,[[16,0],[-8,7],[-8,-7]],15,8,'#d4f8ff',p.angle,.4);
   }
-  for(let n=0;n<(p.weapons?.length||1);n++){const side=n%2?1:-1,px=-7-Math.floor(n/2)*5,py=side*(13+Math.floor(n/2)*4),ca=Math.cos(p.angle),sa=Math.sin(p.angle),at=pointAt(p.x,p.y,px*ca-py*sa,px*sa+py*ca);box(at.x,at.y,21,4,9,6,'#a7c3df',p.angle);}
+  for(const [n,w] of (p.weapons||[]).entries()){const at=window.RRProgress?.mount(p,n,sphereMode?window.RRSphere:null);if(!at)continue;const wide=['shotgun','rocket','minigun'].includes(w.id)?12:7;box(at.x,at.y,30,wide,3,7,window.RRProgress.tiers[w.tier].color,at.angle);}
+
   const length=s.reduced?19:19+Math.sin(s.t*24)*4;
   const engine=pointAt(p.x,p.y,-Math.cos(p.angle)*19,-Math.sin(p.angle)*19);prism(engine.x,engine.y,[[0,-6],[-length,0],[0,6]],5,4,'#7feeff',p.angle,.25);
   if(sphereMode&&!modeled){prism(p.x,p.y,polygon(6,8),22,5,'#88e8ff',0,.6);for(const side of [-1,1]){const at=pointAt(p.x,p.y,Math.cos(p.angle+side*1.7)*16,Math.sin(p.angle+side*1.7)*16);prism(at.x,at.y,polygon(4,6),13,5,'#f1ffff',0,.7);}}
+  if(modeled&&p.character&&p.character!=='ranger'){const hull=window.RRProgress?.hulls[p.character];if(hull)prism(p.x,p.y,hull,2,4,p.color,p.angle,.45);}
   if(p.shield>0)ring(p.x,p.y,33,10,p.color);
  }
  for(const b of s.shots){const a=Math.atan2(b.vy,b.vx);box(b.x,b.y,Math.max(8,(b.r||3)*3),Math.max(3,b.r||3),6,4,b.color||'#7dffd0',a);}
