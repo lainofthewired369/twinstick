@@ -2,7 +2,7 @@
 (() => {
 'use strict';
 const W=1280,H=720,TAU=Math.PI*2;
-const colors={drone:'#ff6485',tank:'#ffc877',runner:'#ff9161',gunner:'#b497ff',charger:'#ff536b',splitter:'#bef784',swarm:'#c5ffb0',sentinel:'#78dfff',boss:'#fa8ee8'};
+const colors={skirmisher:'#ffb347',bomber:'#ff72be',medic:'#49f5cd',drone:'#ff6485',tank:'#ffc877',runner:'#ff9161',gunner:'#b497ff',charger:'#ff536b',splitter:'#bef784',swarm:'#c5ffb0',sentinel:'#78dfff',boss:'#fa8ee8'};
 let canvas,gl,program,buffer,failed=false,lost=false,used=0,data=new Float32Array(262144),palette={},sphereMode=false,focus={x:640,y:360},sphereUniform,software,softwareContext,backend='pending',reason='',projection=null,planetMesh=null,thirdMode=false,thirdUniform,cameraUniforms,thirdCamera;
 function init(){
  try{
@@ -120,7 +120,8 @@ function draw(x,s){
   shadow(e.x,e.y,e.r+4);
   if((e.type==='lancer'||e.beamAttack)&&e.windup>0||e.beamLeft>0){const end=pointAt(e.x,e.y,Math.cos(e.aim)*(sphereMode?600:1000),Math.sin(e.aim)*(sphereMode?600:1000));line(e.x,e.y,end.x,end.y,1,e.beamLeft>0?12:2,e.beamLeft>0?'#fff1ff':'#71345d');}
   if((sphereMode||thirdMode)&&model(e.type,e,e.aim||0,c,e.r/25,!hardware||detailed++>=40)){if(e.slowTime>0)ring(e.x,e.y,e.r+5,3,'#a2efff');continue;}
-  const sides=['runner','charger','gunner'].includes(e.type)?3:['tank','sentinel'].includes(e.type)?4:6;
+  if(e.windup>0&&e.type!=='lancer'){for(let n=0;n<8;n++){const a=n*TAU/8,at=pointAt(e.x,e.y,Math.cos(a)*(e.r+10),Math.sin(a)*(e.r+10));box(at.x,at.y,10,4,4,8,c,a);}}
+  const sides=['runner','charger','gunner','skirmisher'].includes(e.type)?3:['tank','sentinel','bomber'].includes(e.type)?4:6;
   prism(e.x,e.y,polygon(e.r,sides),2,h,c,e.aim||0,.75);
   prism(e.x,e.y,polygon(e.r*.55,sides),h+2,6,'#20314e',e.aim||0,.6);
   prism(e.x,e.y,polygon(5,4),h+8,5,'#e9fcff',0,.25);

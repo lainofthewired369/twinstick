@@ -1,7 +1,7 @@
 /* Shared procedural renderer for Riftbreak gameplay and its visual preview. */
 (() => {
 'use strict';
-const TAU=Math.PI*2,colors={drone:'#ff6485',tank:'#ffc877',runner:'#ff9161',gunner:'#b497ff',charger:'#ff536b',splitter:'#bef784',swarm:'#c5ffb0',sentinel:'#78dfff',boss:'#fa8ee8'};
+const TAU=Math.PI*2,colors={skirmisher:'#ffb347',bomber:'#ff72be',medic:'#49f5cd',drone:'#ff6485',tank:'#ffc877',runner:'#ff9161',gunner:'#b497ff',charger:'#ff536b',splitter:'#bef784',swarm:'#c5ffb0',sentinel:'#78dfff',boss:'#fa8ee8'};
 let backdrop=null;
 function polygon(x,points,fill,stroke){x.beginPath();points.forEach((p,i)=>i?x.lineTo(...p):x.moveTo(...p));x.closePath();if(fill){x.fillStyle=fill;x.fill();}if(stroke){x.strokeStyle=stroke;x.stroke();}}
 function circle(x,a,b,r,color,width=1){x.strokeStyle=color;x.lineWidth=width;x.beginPath();x.arc(a,b,r,0,TAU);x.stroke();}
@@ -32,12 +32,12 @@ function ship(x,p,t,reduced,refined=false){if(p.hp<=0)return;x.save();x.translat
 function enemy(x,e,t,reduced){if(e.hp<=0)return;const c=colors[e.type]||'#ff6485';x.save();
  if((e.type==='lancer'||e.beamAttack)&&e.windup>0||e.beamLeft>0){x.strokeStyle=e.beamLeft>0?'#fff1ff':'#71345d';x.lineWidth=e.beamLeft>0?12:2;x.beginPath();x.moveTo(e.x,e.y);x.lineTo(e.x+Math.cos(e.aim)*1000,e.y+Math.sin(e.aim)*1000);x.stroke();}
  x.translate(e.x,e.y);x.fillStyle='#02071588';x.beginPath();x.ellipse(3,10,e.r+6,e.r*.6,0,0,TAU);x.fill();x.rotate(e.aim||(!reduced?t*.25:0));x.lineWidth=2;
- const sides=e.type==='boss'?8:['tank','sentinel'].includes(e.type)?4:['runner','charger','gunner'].includes(e.type)?3:6,points=[];
+ const sides=e.type==='boss'?8:['tank','sentinel','bomber'].includes(e.type)?4:['runner','charger','gunner','skirmisher'].includes(e.type)?3:6,points=[];
  for(let n=0;n<sides;n++)points.push([Math.cos(n*TAU/sides)*e.r,Math.sin(n*TAU/sides)*e.r]);polygon(x,points,e.hit?'#e9f8ff':'#27344f',c);
  for(let n=0;n<sides;n++){const a=n*TAU/sides,b=(n+1)*TAU/sides;polygon(x,[[0,0],[Math.cos(a)*e.r,Math.sin(a)*e.r],[Math.cos(b)*e.r,Math.sin(b)*e.r]],n%2?'#02081855':'#cedcff13');}
  x.shadowColor=c;x.shadowBlur=10;circle(x,0,0,e.r*.43,c,2);x.fillStyle=e.hit?'#fff':c;x.fillRect(-4,-4,8,8);x.shadowBlur=0;
  if(e.type==='boss'||e.type==='sentinel'){if(!reduced)x.rotate(-t*.35);for(let n=0;n<6;n++){x.rotate(TAU/6);polygon(x,[[e.r+3,-5],[e.r+15,0],[e.r+3,5]],'#b2cfe0',c);}}
- if(e.slowTime>0)circle(x,0,0,e.r+5,'#a2efff',1);x.restore();
+ if(e.windup>0&&e.type!=='lancer')circle(x,0,0,e.r+7+e.windup*8,c,3);if(e.type==='medic'){x.fillStyle=c;x.fillRect(-3,-12,6,24);x.fillRect(-12,-3,24,6);}if(e.slowTime>0)circle(x,0,0,e.r+5,'#a2efff',1);x.restore();
 }
 function draw(x,s){const {W=1280,H=720,t=0,reduced=false}=s;x.save();if(s.frontier&&window.RiftFrontier)window.RiftFrontier.background(x,s);else background(x,W,H,t,reduced);
  for(const d of s.drops){x.save();x.translate(d.x,d.y);x.rotate(Math.PI/4);x.shadowBlur=8;x.shadowColor=d.kind==='crate'?'#ffcf7e':'#7dffd0';polygon(x,[[-6,-6],[6,-6],[6,6],[-6,6]],'#1c4354',x.shadowColor);polygon(x,[[-3,-3],[3,-3],[3,3],[-3,3]],x.shadowColor);x.restore();}
