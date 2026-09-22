@@ -33,6 +33,10 @@ async function until(predicate,label){const end=Date.now()+10000;while(!predicat
   await new Promise(resolve=>setTimeout(resolve,100));host.simulate(.05);host.sendState();
   await until(()=>guest.state().players[1].x>initialX,'remote movement');
   console.log('PASS play: two ships, remote input, authoritative movement and replicated state');
+  const sharedTarget={id:9999,x:400,y:300,hp:1000,type:'drone'};
+  host.hurt(sharedTarget,11,0);host.hurt(sharedTarget,22,1);host.sendState(false);
+  await until(()=>guest.state().damageNumbers.some(n=>n.owner===0&&n.amount===11)&&guest.state().damageNumbers.some(n=>n.owner===1&&n.amount===22),'both players damage numbers');
+  console.log('PASS shared damage: host and guest hits both visible on the joining client');
   host.openShop();host.state().players[1].materials=1000;host.sendState();
   await until(()=>guest.state().between&&guest.state().players[1].materials===1000,'shop');
   const shopper=guest.state().players[1],offer=shopper.shop[0],oldCount=host.state().players[1].weapons.length;
