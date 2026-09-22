@@ -44,6 +44,12 @@ async function until(predicate,label){const end=Date.now()+10000;while(!predicat
   await until(()=>host.state().players[1].weapons.length===oldCount+1,'remote purchase');
   assert.equal(host.state().players[0].weapons.length,1);
   console.log('PASS shop: remote purchase reaches host and affects only the owning ship');
+  const casualty=host.state().players[1],rescuer=host.state().players[0];casualty.shield=0;casualty.armor=0;rescuer.x=casualty.x+50;rescuer.y=casualty.y;
+  host.damagePlayer(casualty,100000);host.tickRevives(4);host.sendState(true);
+  await until(()=>guest.state().players[1].downed&&guest.state().players[1].reviveProgress===4,'downed progress');
+  assert.equal(guest.state().players[1].lives,2);rescuer.x=casualty.x+150;host.tickRevives(6);assert.equal(casualty.reviveProgress,4);rescuer.x=casualty.x+50;host.tickRevives(6);host.sendState(true);
+  await until(()=>!guest.state().players[1].downed&&guest.state().players[1].hp>0,'proximity revive');
+  assert.equal(guest.state().players[1].lives,2);console.log('PASS revival: lives, paused cumulative timer and completed revive cross real RTC');
   host.setEnemies(Array.from({length:160},(_,id)=>({id,type:'tank',x:100+id,y:100,r:22,hp:300,maxHp:300,speed:80,hit:0,burn:0,burnDamage:0,attack:1,windup:0,aim:0,charge:0,slow:0,slowTime:0})));host.sendState(true);
   await until(()=>guest.state().enemies.length===160,'large checkpoint');assert(largest>16384);
   console.log('PASS large checkpoint:',largest,'bytes; messages received:',received);

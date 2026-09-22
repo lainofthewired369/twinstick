@@ -173,3 +173,17 @@ The wave-7 boss now unlocks a new refined 2D phase between the wave-5 upgrade an
 Players can travel in any direction. Each online player's camera follows their own ship, including on joining clients; local co-op shares the first player's camera. Coloured edge pointers help locate distant teammates. Mouse aiming, ram movement, projectiles, loot and boss/enemy spawning use world coordinates. Distant enemies are repositioned offscreen near the crew so waves can still end. The open world and following camera continue through wave-10 3D. At wave 15, player positions are folded onto the sphere around the host's focus. World seed, phase and coordinates are replicated and retained in migration checkpoints.
 
 Damage numbers use the attacking player's colour, without P1/P2 text. Simultaneous teammates' hits retain separate display positions. Protocol 16 requires everyone to refresh to v1.17.0 and create a fresh room. Added regression coverage for wave-7 transitions, world travel, aiming, spawns, beam transforms, deterministic chunks, seed restoration and later graphics phases. Real WebRTC tests verify frontier state on the guest.
+
+### v1.17.1 — lighter wave 3–15 bosses
+
+Mirror bosses on waves 3 through 15 now have 20% less health and shield, and 15% less build-based attack damage. Their finite healing reserve decreases with max health. Learning, movement and attack timings remain intact. Bosses from wave 16 onward and waves 1–2 keep their existing balance. This is a host-authoritative balance change on the same network protocol; refresh the host before starting a new run.
+
+### v1.18.0 — three lives and proximity revival
+
+Includes the wave 3–15 boss relief above. Each player starts with three lives per run; each defeat consumes one. With lives remaining, the ship becomes a downed beacon. A living, connected teammate within 100 world units contributes to a shared 10-second revive timer. Progress pauses when nobody is nearby and is retained; multiple rescuers do not accelerate it. Revival restores half max health and grants three seconds of protection. The third defeat eliminates the ship for that run. Lives never refill between waves or on reconnect.
+
+Revive rings and remaining time render in every graphics phase, including the planet; frontier edge pointers include downed teammates. The HUD displays remaining lives. A co-op team wipe ends the run. Solo respawns automatically after ten active seconds while combat waits. Pausing, shopping and host migration pause timers. Downed/eliminated ships automatically mark ready in shops; shop healing and health purchases cannot bypass revival. Their progress is carried into the next wave. Host-authoritative player snapshots preserve lives and revive progress for guests, rejoining and migration.
+
+Protocol 17: all players must refresh to v1.18.0 and create a fresh room. Regression tests cover all three lives, range boundaries, accumulated time, shop protection, team wipe, solo respawn, sphere seams and checkpoint recovery. Real WebRTC tests cover downed state, remaining lives, partial progress and revival on a guest.
+
+Boss schedule in v1.18.0: normal Warden bosses on waves 1–5 inclusive; adaptive player-build mirror bosses start at wave 6. Wave 3–5 Wardens also receive 20% less health and 15% less projectile/ram damage; mirror relief continues through wave 15. Waves 1–2 and 16+ retain their prior balance.

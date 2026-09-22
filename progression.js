@@ -35,7 +35,7 @@ const items={
 function applyItem(p,id,tier=1){
  const item=items[id];if(!item){apply(p,id,tier);return;}
  for(const [k,v] of Object.entries(item.mods)){const n=v*tier;
-  if(k==='health'){p.maxHp=Math.max(25,p.maxHp+n);p.hp=Math.min(p.maxHp,p.hp+Math.max(0,n));}
+  if(k==='health'){p.maxHp=Math.max(25,p.maxHp+n);if(p.hp>0)p.hp=Math.min(p.maxHp,p.hp+Math.max(0,n));}
   else if(k==='damage')p.damage*=Math.max(.35,1+n);
   else if(k==='speed')p.speed=Math.max(100,Math.min(480,p.speed*(1+n)));
   else if(k==='rate')p.rate=Math.max(.045,p.rate/(1+n));
@@ -54,11 +54,11 @@ function init(p,c){c=config(c);const a=characters[c.character];Object.assign(p,{
 function threshold(p){return 8+p.level*5;}
 function sample(keys,n,rng=Math.random){const a=[...keys],out=[];while(out.length<n&&a.length)out.push(a.splice(Math.floor(rng()*a.length),1)[0]);return out;}
 function grant(p,materials,xp){const cash=materials*(1+p.materialBonus)+(p.materialCarry||0),experience=xp*(1+p.xpBonus)+(p.xpCarry||0);p.materials+=Math.floor(cash);p.materialCarry=cash-Math.floor(cash);p.xp+=Math.floor(experience);p.xpCarry=experience-Math.floor(experience);while(p.xp>=threshold(p)){p.xp-=threshold(p);p.level++;p.pending++;p.skillPoints++;}if(p.pending&&!p.levelChoices.length)p.levelChoices=sample(Object.keys(stats),3);}
-function apply(p,id,tier=1){const n=tier;if(id==='damage')p.damage*=1+.15*n;if(id==='rate')p.rate=Math.max(.045,p.rate/(1+.12*n));if(id==='health'){p.maxHp+=15*n;p.hp=Math.min(p.maxHp,p.hp+15*n);}if(id==='speed')p.speed=Math.min(480,p.speed*(1+.08*n));if(id==='armor')p.armor+=2*n;if(id==='regen')p.regen+=.5*n;if(id==='luck')p.luck+=10*n;if(id==='harvest')p.harvest+=4*n;if(id==='crit')p.crit=Math.min(.8,p.crit+.05*n);}
+function apply(p,id,tier=1){const n=tier;if(id==='damage')p.damage*=1+.15*n;if(id==='rate')p.rate=Math.max(.045,p.rate/(1+.12*n));if(id==='health'){p.maxHp+=15*n;if(p.hp>0)p.hp=Math.min(p.maxHp,p.hp+15*n);}if(id==='speed')p.speed=Math.min(480,p.speed*(1+.08*n));if(id==='armor')p.armor+=2*n;if(id==='regen')p.regen+=.5*n;if(id==='luck')p.luck+=10*n;if(id==='harvest')p.harvest+=4*n;if(id==='crit')p.crit=Math.min(.8,p.crit+.05*n);}
 function rarity(wave,luck,rng=Math.random){const roll=rng(),bonus=wave*.008+luck*.001;return roll<Math.min(.12,Math.max(0,(wave-7)*.008+luck*.0004))?4:roll<Math.min(.35,.03+bonus)?3:roll<Math.min(.70,.22+bonus)?2:1;}
 function price(id,tier,wave){return Math.round((['rocket','minigun','laser','sniper'].includes(id)?24:16)*(1+(tier-1)*.8)+wave*2);}
 function restock(p,wave,weaponIds,rng=Math.random){p.shop=Array.from({length:4},(_,i)=>{if(p.shop[i]?.locked)return p.shop[i];const kind=i<2?'weapon':'item',id=sample(kind==='weapon'?weaponIds:Object.keys(items),1,rng)[0],tier=rarity(wave,p.luck,rng);return {uid:++serial,kind,id,tier,cost:price(id,tier,wave),locked:false};});}
-function open(p,wave,weaponIds){p.materials+=10+wave*2+p.harvest;p.hp=Math.min(p.maxHp,Math.max(p.hp,p.maxHp*.5)+20);p.ready=false;p.rerolls=0;p.revision++;restock(p,wave,weaponIds);}
+function open(p,wave,weaponIds){p.materials+=10+wave*2+p.harvest;if(p.hp>0)p.hp=Math.min(p.maxHp,Math.max(p.hp,p.maxHp*.5)+20);p.ready=false;p.rerolls=0;p.revision++;restock(p,wave,weaponIds);}
 function partner(p,w){return p.weapons.find(s=>s.uid!==w.uid&&s.id===w.id&&s.tier===w.tier&&s.tier<4);}
 function sellValue(w,wave){return Math.max(1,Math.floor(price(w.id,w.tier,wave)*.4));}
 function rerollCost(p,wave){return 3+wave+p.rerolls*3;}
