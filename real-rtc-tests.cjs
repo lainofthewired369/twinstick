@@ -47,6 +47,10 @@ async function until(predicate,label){const end=Date.now()+10000;while(!predicat
   host.setEnemies(Array.from({length:160},(_,id)=>({id,type:'tank',x:100+id,y:100,r:22,hp:300,maxHp:300,speed:80,hit:0,burn:0,burnDamage:0,attack:1,windup:0,aim:0,charge:0,slow:0,slowTime:0})));host.sendState(true);
   await until(()=>guest.state().enemies.length===160,'large checkpoint');assert(largest>16384);
   console.log('PASS large checkpoint:',largest,'bytes; messages received:',received);
+  host.setTier(1.5);host.state().players[1].x=-4000;host.state().players[1].y=6000;host.sendState(true);
+  await until(()=>guest.state().visualTier===1.5&&guest.state().players[1].x===-4000,'frontier state');
+  assert.equal(guest.state().worldSeed,host.state().worldSeed);
+  console.log('PASS frontier: procedural seed, visual phase and unbounded coordinates reach guest');
   console.log('PASS real peer-to-peer game integration (local runtime, no relay)');
  }finally{bridge.stdin.write(JSON.stringify({stop:true})+'\n');bridge.stdin.end();}
 })().catch(error=>{console.error(error);process.exitCode=1;bridge.kill();});

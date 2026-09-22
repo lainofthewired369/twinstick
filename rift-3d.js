@@ -71,6 +71,13 @@ function draw(x,s){
  used=0;
  if(sphereMode){
   for(let iy=0;iy<30;iy++)for(let ix=0;ix<60;ix++){const ax=ix*W/60,bx=(ix+1)*W/60,ay=iy*H/30,by=(iy+1)*H/30,c=(ix+iy)%2?'#315b69':'#25414f';triangle([ax,ay,-10],[bx,ay,-10],[bx,by,-10],c);triangle([ax,ay,-10],[bx,by,-10],[ax,by,-10],c);}
+ }else if(s.frontier){
+ box(W/2,H/2,W+200,H+200,-18,17,'#142a30');
+ const left=s.fieldCamera.x-W/2,top=s.fieldCamera.y-H/2;
+ for(let iy=Math.floor(top/96);iy<=Math.ceil((top+H)/96);iy++)for(let ix=Math.floor(left/96);ix<=Math.ceil((left+W)/96);ix++){
+  const px=ix*96-left,py=iy*96-top;box(px,py,93,93,-1,.8,(ix+iy)%2?'#234447':'#1b343c');
+  const n=window.RiftFrontier?.hash(ix,iy,s.worldSeed)||0;if(n>.87)prism(px,py,polygon(10+n*12,5),0,18+n*12,'#51858a',n*6,.4);
+ }
  }else{
  // Raised arena floor, recessed tiles, pylons and a luminous perimeter.
  box(W/2,H/2,W-18,H-18,-18,17,'#182a49');

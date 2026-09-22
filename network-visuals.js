@@ -16,7 +16,7 @@ function create(Sphere){
  function receive(state,now){
   const key=[state.wave,state.visualTier,state.running,state.paused,state.between,state.migrating,state.fractureLeft>0,state.epoch].join(':');
   if(key!==signature){reset();signature=key;}
-  const frame={time:now,sphere:state.visualTier===3};
+  const frame={time:now,sphere:state.visualTier===3,open:state.visualTier===1.5||state.visualTier===2};
   for(const group of ['players','enemies','shots','enemyShots'])frame[group]=new Map((state[group]||[]).map(p=>[p.netId??p.id,{...p}]));
   frames.push(frame);if(frames.length>12)frames.shift();
  }
@@ -35,7 +35,7 @@ function create(Sphere){
   const facing=sphere?(local.cameraAngle||0):0,c=Math.cos(facing),s=Math.sin(facing),slow=p.enemySlowTime>0?1-(p.enemySlow||0):1;
   const vx=p.ramLeft>0?Math.cos(p.ramAngle)*900:(input.dx*c-input.dy*s)*p.speed*slow;
   const vy=p.ramLeft>0?Math.sin(p.ramAngle)*900:(input.dx*s+input.dy*c)*p.speed*slow;
-  function advance(q,seconds){if(sphere){const n=Sphere.step(q,vx,vy,seconds);return {...q,...n,cameraAngle:Sphere.step({...q,angle:q.cameraAngle||0},vx,vy,seconds).angle};}return {...q,x:Math.max(18,Math.min(1262,q.x+vx*seconds)),y:Math.max(18,Math.min(702,q.y+vy*seconds))};}
+  function advance(q,seconds){if(sphere){const n=Sphere.step(q,vx,vy,seconds);return {...q,...n,cameraAngle:Sphere.step({...q,angle:q.cameraAngle||0},vx,vy,seconds).angle};}return {...q,x:frames.at(-1).open?q.x+vx*seconds:Math.max(18,Math.min(1262,q.x+vx*seconds)),y:frames.at(-1).open?q.y+vy*seconds:Math.max(18,Math.min(702,q.y+vy*seconds))};}
   local=advance(local,dt);
   const target=advance(p,Math.min(.1,Math.max(0,(now-frames.at(-1).time)/1000)+.05));
   const distance=sphere?Sphere.delta(local,target).distance:Math.hypot(local.x-target.x,local.y-target.y);
