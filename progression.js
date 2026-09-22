@@ -21,7 +21,7 @@ const items={
  cryo:{name:'Cryo Rounds',icon:'❄',desc:'Hits slow enemies 12% for 1s (50% cap)',mods:{slow:.12}},
  drill:{name:'Phase Drill',icon:'↠',desc:'+1 projectile penetration',mods:{pierce:1}},
  shield:{name:'Aegis Battery',icon:'◉',desc:'+15 shield · regenerates after 4s unharmed',mods:{shield:15}},
- thruster:{name:'Vector Thrusters',icon:'»',desc:'+5% speed · 10% shorter dash cooldown',mods:{speed:.05,dash:.10}},
+ thruster:{name:'Vector Thrusters',icon:'»',desc:'+5% speed · +3 armor for ramming',mods:{speed:.05,armor:3}},
  targeting:{name:'Hunter Chip',icon:'⌁',desc:'+7% critical chance (80% cap)',mods:{crit:.07}},
  biomass:{name:'Salvage Heart',icon:'♥',desc:'Heal 1 HP on each kill',mods:{killHeal:1}},
  prospector:{name:'Ore Scanner',icon:'◇',desc:'+15% pickup materials',mods:{materialBonus:.15}},
@@ -39,7 +39,7 @@ function applyItem(p,id,tier=1){
   else if(k==='damage')p.damage*=Math.max(.35,1+n);
   else if(k==='speed')p.speed=Math.max(100,Math.min(480,p.speed*(1+n)));
   else if(k==='rate')p.rate=Math.max(.045,p.rate/(1+n));
-  else if(k==='dash')p.dashTime=Math.max(.35,p.dashTime*(1-n));
+  else if(k==='dash')p.dashTime=30;
   else if(k==='shield'){p.maxShield+=n;p.shield=Math.min(p.maxShield,p.shield+n);}
   else p[k]=(p[k]||0)+n;
  }
@@ -50,7 +50,7 @@ let serial=0;
 function weapon(id,tier=1){return {uid:++serial,id,tier,cool:0,spin:0};}
 function syncSerial(players){for(const p of players)for(const entry of [...(p.weapons||[]),...(p.shop||[])])if(Number.isFinite(entry?.uid))serial=Math.max(serial,entry.uid);}
 function config(c){return {character:Object.hasOwn(characters,c?.character)?c.character:'ranger',starter:starters.includes(c?.starter)?c.starter:'pistol'};}
-function init(p,c){c=config(c);const a=characters[c.character];Object.assign(p,{character:c.character,level:1,xp:0,skillPoints:0,skills:['core'],abilities:{},abilityTimers:{},orbitTime:0,materials:0,pending:0,levelChoices:[],armor:a.armor||0,regen:0,luck:a.luck||0,harvest:a.harvest||0,crit:.05,range:1,blastScale:1,leech:0,slow:0,pierce:0,killHeal:0,materialBonus:0,xpBonus:0,berserk:0,maxShield:0,shield:0,shieldDelay:0,multi:1,dashTime:1.5,pickup:90*(a.pickup||1),shop:[],rerolls:0,ready:false,revision:0,items:[],weapons:[weapon(c.starter)]});p.maxHp+=a.hp||0;p.hp=p.maxHp;p.speed*=a.speed||1;p.damage*=a.damage||1;return p;}
+function init(p,c){c=config(c);const a=characters[c.character];Object.assign(p,{character:c.character,level:1,xp:0,skillPoints:0,skills:['core'],abilities:{},abilityTimers:{},orbitTime:0,materials:0,pending:0,levelChoices:[],armor:a.armor||0,regen:0,luck:a.luck||0,harvest:a.harvest||0,crit:.05,range:1,blastScale:1,leech:0,slow:0,pierce:0,killHeal:0,materialBonus:0,xpBonus:0,berserk:0,maxShield:0,shield:0,shieldDelay:0,multi:1,dashTime:30,pickup:90*(a.pickup||1),shop:[],rerolls:0,ready:false,revision:0,items:[],weapons:[weapon(c.starter)]});p.maxHp+=a.hp||0;p.hp=p.maxHp;p.speed*=a.speed||1;p.damage*=a.damage||1;return p;}
 function threshold(p){return 8+p.level*5;}
 function sample(keys,n,rng=Math.random){const a=[...keys],out=[];while(out.length<n&&a.length)out.push(a.splice(Math.floor(rng()*a.length),1)[0]);return out;}
 function grant(p,materials,xp){const cash=materials*(1+p.materialBonus)+(p.materialCarry||0),experience=xp*(1+p.xpBonus)+(p.xpCarry||0);p.materials+=Math.floor(cash);p.materialCarry=cash-Math.floor(cash);p.xp+=Math.floor(experience);p.xpCarry=experience-Math.floor(experience);while(p.xp>=threshold(p)){p.xp-=threshold(p);p.level++;p.pending++;p.skillPoints++;}if(p.pending&&!p.levelChoices.length)p.levelChoices=sample(Object.keys(stats),3);}
