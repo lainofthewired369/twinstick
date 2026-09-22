@@ -63,3 +63,5 @@ html[data-input="gamepad"] button:focus{outline:3px solid #fff;outline-offset:3p
 @media(orientation:landscape) and (max-height:540px){#inputHint{font-size:11px;margin:5px 0}}
 
 .respawn-controls{position:absolute;z-index:35;bottom:90px;left:50%;transform:translateX(-50%);width:min(94%,560px);display:grid;gap:6px;padding:10px;background:#091825ed;border:1px solid #68f7c2;border-radius:12px;text-align:center}.respawn-controls button{min-height:48px;background:#68f7c2;color:#061820;font-weight:800;font-size:15px}.respawn-controls span{color:#d2e7ed;font-size:13px}.respawn-controls.hidden{display:none}
+
+#soundBtn{flex:none;min-width:44px;min-height:44px;padding:7px;font-size:11px} @media(orientation:landscape) and (max-height:540px){#soundBtn{min-height:32px;font-size:10px}} @media(max-width:420px){header{gap:5px}.brand b{letter-spacing:.04em}#fullscreenBtn{font-size:8px;padding:4px}.hud div{min-width:30px}#soundBtn{font-size:10px;padding:4px}}

@@ -37,6 +37,10 @@ async function until(predicate,label){const end=Date.now()+10000;while(!predicat
   host.hurt(sharedTarget,11,0);host.hurt(sharedTarget,22,1);host.sendState(false);
   await until(()=>guest.state().damageNumbers.some(n=>n.owner===0&&n.amount===11)&&guest.state().damageNumbers.some(n=>n.owner===1&&n.amount===22),'both players damage numbers');
   console.log('PASS shared damage: host and guest hits both visible on the joining client');
+  const gunner=host.state().players[1];gunner.weapons=[P.weapon('shotgun')];host.shoot(gunner);host.sendState(false);
+  await until(()=>guest.state().combatEvents.some(e=>e.kind==='shotgun'&&e.owner===1),'shared weapon audio event');
+  assert.equal(guest.state().players[1].kickSpeed,150);const soundIds=guest.state().combatEvents.map(e=>e.id);host.sendState(false);
+  assert.equal(new Set(soundIds).size,soundIds.length);console.log('PASS combat feedback: attributed sound events and authoritative shotgun momentum cross real RTC');
   host.openShop();host.state().players[1].materials=1000;host.sendState();
   await until(()=>guest.state().between&&guest.state().players[1].materials===1000,'shop');
   const shopper=guest.state().players[1],offer=shopper.shop[0],oldCount=host.state().players[1].weapons.length;

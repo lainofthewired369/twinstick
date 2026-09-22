@@ -33,8 +33,9 @@ function create(Sphere){
   const sphere=frames.at(-1).sphere;
   if(!local||local.id!==p.id)local={...p};
   const facing=sphere?(local.cameraAngle||0):0,c=Math.cos(facing),s=Math.sin(facing),slow=p.enemySlowTime>0?1-(p.enemySlow||0):1;
-  const vx=p.ramLeft>0?Math.cos(p.ramAngle)*900:(input.dx*c-input.dy*s)*p.speed*slow;
-  const vy=p.ramLeft>0?Math.sin(p.ramAngle)*900:(input.dx*s+input.dy*c)*p.speed*slow;
+  const kick=p.kickSpeed||0;
+  const vx=p.ramLeft>0?Math.cos(p.ramAngle)*900:(input.dx*c-input.dy*s)*p.speed*slow+Math.cos(p.kickAngle||0)*kick;
+  const vy=p.ramLeft>0?Math.sin(p.ramAngle)*900:(input.dx*s+input.dy*c)*p.speed*slow+Math.sin(p.kickAngle||0)*kick;
   function advance(q,seconds){if(sphere){const n=Sphere.step(q,vx,vy,seconds);return {...q,...n,cameraAngle:Sphere.step({...q,angle:q.cameraAngle||0},vx,vy,seconds).angle};}return {...q,x:frames.at(-1).open?q.x+vx*seconds:Math.max(18,Math.min(1262,q.x+vx*seconds)),y:frames.at(-1).open?q.y+vy*seconds:Math.max(18,Math.min(702,q.y+vy*seconds))};}
   local=advance(local,dt);
   const target=advance(p,Math.min(.1,Math.max(0,(now-frames.at(-1).time)/1000)+.05));

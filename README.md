@@ -205,3 +205,14 @@ During waves 6–15, if any living, connected player is at or below 35% health, 
 Host-authoritative balance update on protocol 18. Refresh all players to v1.20.0 before starting a new run. Regression tests verify turn caps, angle wrapping, Warden warnings, damage attribution, threshold/connection/death handling, cooldowns, recovery and unchanged later waves.
 
 The shop also sells extra respawn lives: **25 + 15 × your current remaining lives** materials. Examples: 0 lives → 25, 5 → 100, 10 → 175. Each purchase adds one life and immediately raises the next price; spending lives lowers it again. The price and wallet are personal, computed by the host. Downed auto-ready players may buy lives and then choose Respawn Now; buying does not revive automatically. Purchase revisions reject duplicate requests. The real WebRTC test verifies guest purchases, host-calculated pricing and player ownership.
+
+
+### v1.21.0 — synth audio, impact weight and recoil
+
+Original Web Audio synth/noise effects give each weapon a distinct voice, with hits, explosions, kills, pickups, damage and rams. Audio unlocks on a tap/click/key press. The header sound button remembers mute locally. Voice limits, sound rate limits and distance attenuation keep eight-player combat manageable. No Geometry Wars recordings or music are included.
+
+Shotguns add a backward impulse (roughly 21 arena units), snipers and rockets smaller kicks. Impulses combine with steering, decay independently of frame rate, cap at 240 units/second and parallel-transport on the planet. Host-authoritative recoil is included in guest prediction and checkpoints; respawning clears it.
+
+Rocket blasts have a 55 ms local display freeze and up to 420 ms of shake. Shotgun/sniper hits have a 22 ms freeze. Freeze triggers have a 300 ms cooldown, never stack, and do not pause simulation, input delivery or heartbeats. Reduced-motion preferences disable both freeze and shake. Ordinary targets briefly stun for 120 ms on rockets and 45 ms on shotgun/sniper hits, with a 500 ms resistance window. Bosses take 30% of that stun and have 1.2 seconds of resistance.
+
+Bounded, attributed combat events travel in host snapshots; clients deduplicate their IDs. Protocol 19 requires everyone to refresh to v1.21.0 and start a fresh room. Unit tests cover recoil distance and frame rate, sphere motion, caps, stun resistance, effect cooldowns, reduced motion and replication. The real WebRTC integration test verifies sound-event and recoil delivery (it does not test iPhone audio hardware).
