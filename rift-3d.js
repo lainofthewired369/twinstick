@@ -65,8 +65,8 @@ function softwareDraw(){
  if(!softwareContext)return false;
  const x=softwareContext,faces=[],scale=sphereMode?1:.75;if(software.width!==W*scale){software.width=W*scale;software.height=H*scale;}x.setTransform(scale,0,0,scale,0,0);x.fillStyle='#060913';x.fillRect(0,0,W,H);
  if(thirdMode){
-  for(let i=0;i<used;i+=27){const points=[];for(let n=0;n<3;n++){const j=i+n*9;points.push(window.RRThird.view({x:data[j],y:data[j+1]},thirdCamera,data[j+2]));}const clipped=window.RRThird.clip(points);if(clipped.length>=3)faces.push({i,points:clipped,depth:points.reduce((a,p)=>a+p.z,0)/3});}
-  faces.sort((a,b)=>b.depth-a.depth);
+  for(let i=0;i<used;i+=27){const points=[];for(let n=0;n<3;n++){const j=i+n*9;points.push(window.RRThird.view({x:data[j],y:data[j+1]},thirdCamera,data[j+2]));}const clipped=window.RRThird.clip(points);if(clipped.length>=3)faces.push({i,points:clipped,ground:Math.max(data[i+2],data[i+11],data[i+20])<=0,depth:points.reduce((a,p)=>a+p.z,0)/3});}
+  faces.sort((a,b)=>Number(b.ground)-Number(a.ground)||b.depth-a.depth);
   for(const f of faces){const i=f.i,shade=.38+.62*Math.max(0,(-.5*data[i+3]-.8*data[i+4]+data[i+5])/Math.hypot(.5,.8,1));x.fillStyle='rgb('+[6,7,8].map(n=>Math.round(data[i+n]*shade*255)).join(',')+')';x.beginPath();f.points.forEach((p,n)=>{const px=640+650*p.x/p.z,py=360-650*p.y/p.z;if(n)x.lineTo(px,py);else x.moveTo(px,py);});x.closePath();x.fill();}return true;
  }
  for(let i=0;i<used;i+=27)faces.push(i);
@@ -90,7 +90,7 @@ function draw(x,s){
  if(thirdMode){
   const L=window.RRThird.LIMIT;
   // Real world-space floor tiles, pylons, perimeter walls and skyline towers.
-  for(let y=-L;y<L;y+=240)for(let a=-L;a<L;a+=240){box(a+120,y+120,238,238,-12,12,(Math.round((a+y)/240)%2)?'#1a3447':'#244457');}
+  for(let y=-L;y<L;y+=240)for(let a=-L;a<L;a+=240){const c=(Math.round((a+y)/240)%2)?'#1a3447':'#244457';triangle([a,y,0],[a+238,y,0],[a+238,y+238,0],c);triangle([a,y,0],[a+238,y+238,0],[a,y+238,0],c);}
   for(const o of window.RRThird.pylons){prism(o.x,o.y,polygon(o.r,12),0,o.h,'#46627b');prism(o.x,o.y,polygon(o.r+2,12),o.h-12,5,'#72e5e1');}
   for(const side of [-1,1]){box(0,side*(L+10),L*2,20,0,90,'#30455f');box(side*(L+10),0,20,L*2,0,90,'#30455f');for(let k=-2;k<=2;k++){box(k*850,side*(L+130),130,170,0,350+(k+2)*65,'#1a3049');box(side*(L+130),k*850,170,130,0,350+(k+2)*65,'#1a3049');}}
  }else if(sphereMode){
