@@ -65,3 +65,18 @@ html[data-input="gamepad"] button:focus{outline:3px solid #fff;outline-offset:3p
 .respawn-controls{position:absolute;z-index:35;bottom:90px;left:50%;transform:translateX(-50%);width:min(94%,560px);display:grid;gap:6px;padding:10px;background:#091825ed;border:1px solid #68f7c2;border-radius:12px;text-align:center}.respawn-controls button{min-height:48px;background:#68f7c2;color:#061820;font-weight:800;font-size:15px}.respawn-controls span{color:#d2e7ed;font-size:13px}.respawn-controls.hidden{display:none}
 
 #soundBtn{flex:none;min-width:44px;min-height:44px;padding:7px;font-size:11px} @media(orientation:landscape) and (max-height:540px){#soundBtn{min-height:32px;font-size:10px}} @media(max-width:420px){header{gap:5px}.brand b{letter-spacing:.04em}#fullscreenBtn{font-size:8px;padding:4px}.hud div{min-width:30px}#soundBtn{font-size:10px;padding:4px}}
+
+/* Keep Safari rotation text sizing stable and prevent gameplay/menu double-tap zoom. */
+html{-webkit-text-size-adjust:100%;text-size-adjust:100%}
+main{touch-action:pan-x pan-y;min-width:0}
+.shop-head h2,.shop-summary,.shop-sidebar,.shop-head{min-width:0;overflow-wrap:anywhere}
+.shop-summary{overflow-x:hidden}
+#levelChoices button{width:100%;min-width:0;white-space:normal;overflow-wrap:anywhere;touch-action:pan-y}
+#fullscreenBtn{flex-shrink:0;max-width:104px;font-size:10px;padding:8px}
+@media(max-width:700px) and (orientation:portrait){
+ header{gap:6px}.brand{flex:1;min-width:0}.hud{flex:0;gap:4px}
+ .shop.level-pending .shop-summary{padding:12px}
+ .shop.level-pending #levelChoices{gap:10px}
+ .shop.level-pending #levelChoices button{font-size:16px;min-height:72px;padding:12px}
+ .shop.level-pending #shopHint{font-size:16px}
+}

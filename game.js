@@ -113,14 +113,29 @@ function shopAction(action,uid,stat){
  const m={t:'shop',action,uid,stat,wave,revision:p.revision};
  if(mode==='online'&&!isHost)send(m);else applyShop(id,m);
 }
-function applyShop(id,m){if(!running||!between||fractureLeft>0||migrating||!players[id]||(players[id].hp<=0&&m.action!=='life')||players[id].connected===false||!P.action(players[id],m,wave,Object.keys(weapons)))return;lastUI='';if(activePlayers().every(p=>p.ready)){nextWave();paused=false;resetInput();show('none');}sendState();}
+function applyShop(id,m){
+ const p=players[id];
+ let reason='';
+ if(!running||!between)reason='The shop is no longer open.';
+ else if(migrating||fractureLeft>0)reason='Reconnecting the team — wait a moment, then choose again.';
+ else if(!p||p.connected===false)reason='Your ship is disconnected. Rejoin from this tab.';
+ else if(p.hp<=0&&m.action!=='life')reason='Respawn before choosing upgrades.';
+ else if(!P.action(p,m,wave,Object.keys(weapons)))reason='Shop updated. Please choose again.';
+ if(reason){
+  if(id===localId){$('#shopHint').textContent=reason;}
+  else {const link=links.get(id);if(link)sendTo(link.c,{t:'shop-rejected',v:20,reason});}
+  sendState();return false;
+ }
+ lastUI='';if(activePlayers().every(p=>p.ready)){nextWave();paused=false;resetInput();show('none');}
+ sendState();ui();return true;
+}
 function button(parent,label,fn,disabled=false){const b=document.createElement('button');b.textContent=label;b.disabled=disabled;b.onclick=fn;parent.append(b);return b;}
 function renderShop(){
  const p=players[mode==='local'?shopPlayer:localId];if(!p)return;
  $('#shopTitle').textContent=(mode==='online'?'YOUR SHIP · ':'')+P.characters[p.character].name+' · '+shipName(p.id)+' ship';
  $('#shopStats').textContent=p.materials+' materials · Level '+p.level+' · XP '+p.xp+'/'+P.threshold(p)+' · HP '+Math.ceil(p.hp)+'/'+p.maxHp+' · LIVES '+(p.lives??10)+(p.downed?' · DOWN · REVIVE '+(10-(p.reviveProgress||0)).toFixed(1)+'s':p.hp<=0?' · ELIMINATED':'')+' · Damage '+Math.round(p.damage/22*100)+'% · Armor '+p.armor+' · Regen '+p.regen.toFixed(1)+'/s · Luck '+p.luck+' · Harvest '+p.harvest+' · Crit '+Math.round(p.crit*100)+'%';
- $('#shopHint').textContent=p.hp<=0?(p.downed?'Downed · automatically ready. Teammates can finish reviving you next wave.':'Eliminated · watching the team.') :p.ready?'Ready. Waiting for the rest of the team.':p.pending?'Choose '+p.pending+' level upgrade(s), then shop and mark Ready.':'Shop purchases are personal. Supply crates are shared with the team.';
- $('#shop').classList.toggle('level-pending',p.pending>0&&p.hp>0);$('#levelChoices').replaceChildren();for(const stat of p.levelChoices)button($('#levelChoices'),P.stats[stat].name+' — '+P.stats[stat].desc,()=>shopAction('level',null,stat),p.ready);
+ $('#shopHint').textContent=migrating?'Reconnecting the team — upgrades unlock when migration finishes.':p.hp<=0?(p.downed?'Downed · automatically ready. Teammates can finish reviving you next wave.':'Eliminated · watching the team.') :p.ready?'Ready. Waiting for the rest of the team.':p.pending?'Choose '+p.pending+' level upgrade(s), then shop and mark Ready.':'Shop purchases are personal. Supply crates are shared with the team.';
+ $('#shop').classList.toggle('level-pending',p.pending>0&&p.hp>0);$('#levelChoices').replaceChildren();for(const stat of p.levelChoices)button($('#levelChoices'),P.stats[stat].name+' — '+P.stats[stat].desc,()=>shopAction('level',null,stat),p.ready||migrating);
  $('#offers').replaceChildren();
  for(const o of p.shop){const card=document.createElement('article');card.className='shop-card';$('#offers').append(card);if(!o){card.textContent='SOLD';continue;}const t=P.tiers[o.tier];card.style.borderColor=t.color;const label=o.kind==='weapon'?weapons[o.id]:(P.items[o.id]||P.stats[o.id]);const text=document.createElement('p');text.textContent=(label.icon?label.icon+' ':'')+t.name+' '+label.name+' · '+(o.kind==='weapon'?Math.round(t.power*100)+'% base damage':label.desc+' ×'+o.tier);card.append(text);const full=o.kind==='weapon'&&p.weapons.length>=6,merge=full&&p.weapons.some(w=>w.id===o.id&&w.tier===o.tier&&w.tier<4);button(card,(full&&!merge?'FULL · ':merge?'BUY + COMBINE · ':'BUY · ')+o.cost,()=>shopAction('buy',o.uid),p.ready||p.materials<o.cost||(full&&!merge));button(card,o.locked?'UNLOCK':'LOCK',()=>shopAction('lock',o.uid),p.ready);}
  $('#inventory').replaceChildren();for(const w of p.weapons){const row=document.createElement('article');row.className='shop-card';row.style.borderColor=P.tiers[w.tier].color;const text=document.createElement('p');text.textContent=P.tiers[w.tier].name+' '+weapons[w.id].name+' · '+Math.round(P.tiers[w.tier].power*100)+'% damage · '+({'shared-crate':'Shared team crate',shop:'Your shop purchase',starter:'Your starter',combined:'Combined by you'}[w.source]||'Equipment');row.append(text);button(row,'COMBINE → '+(P.tiers[w.tier+1]?.name||'MAX'),()=>shopAction('combine',w.uid),p.ready||!P.partner(p,w));button(row,'SELL · '+P.sellValue(w,wave),()=>shopAction('sell',w.uid),p.ready||p.weapons.length<=1);$('#inventory').append(row);}
@@ -636,7 +651,8 @@ function ui(){
  if(overlay==='skills'&&!between&&!treePreview)show('none');
  if(overlay==='skills'){window.RRSkillUI?.render(treePreview||players[mode==='local'?shopPlayer:localId],id=>shopAction('skill',null,id));return;}
  if(['menu','lobby','armory'].includes(overlay))return;
- const key=[running,between,players.map(p=>p.revision).join(','),shopPlayer,shopTab,localId,isHost,mode].join('|');if(key===lastUI)return;lastUI=key;
+ if(between)$('#teamReady').textContent=activePlayers().filter(p=>p.ready).length+'/'+activePlayers().length+' ready · '+activePlayers().filter(p=>!p.ready).map(p=>'P'+(p.id+1)).join(', ');
+ const key=[running,between,players[mode==='local'?shopPlayer:localId]?.revision,shopPlayer,shopTab,localId,isHost,mode,migrating].join('|');if(key===lastUI)return;lastUI=key;
  if(!running){$('#finalScore').textContent='Wave '+wave+' · '+score+' points';show('gameover');$('[data-action="restart"]').disabled=mode==='online'&&!isHost;return;}
  if(between){show('shop');renderShop();}else show('none');
 }
@@ -892,7 +908,7 @@ function wire(c,token){
   if(accepting){
    if(!isHost)return;
    if(m.t==='ready'&&!link){
-    if(m.v!==20||typeof m.token!=='string'||m.token.length<16||m.token.length>128){rejectConnection(c,'Refresh to v1.23.0 and join again.');return;}
+    if(m.v!==20||typeof m.token!=='string'||m.token.length<16||m.token.length>128){rejectConnection(c,'Refresh to v1.23.1 and join again.');return;}
     let seat=[...seats.values()].find(s=>s.token===m.token);
     if(seat&&seat.id===localId){rejectConnection(c,'This ship is currently the host.');return;}
     if(!seat){
@@ -931,6 +947,7 @@ function wire(c,token){
   if(m.t==='welcome'&&Number.isInteger(m.id)&&m.id>=0&&m.id<MAX_PLAYERS){
    localId=m.id;clearTimeout(netTimer);recovering=false;acceptMeta(m);mode='online';netStatus('Connected as '+shipName(localId)+'. Waiting for the host to start.');return;
   }
+  if(m.t==='shop-rejected'){$('#shopHint').textContent=m.reason||'Shop updated. Please choose again.';return;}
   if(m.t==='lobby'){acceptMeta(m);renderLobby();return;}
   if(m.t==='state'){
    if(!Array.isArray(m.players)||m.players.length<1||m.players.length>MAX_PLAYERS||!m.players.every((p,i)=>p&&p.id===i)||!m.players[localId]||!Array.isArray(m.enemies)||!Array.isArray(m.shots))return;

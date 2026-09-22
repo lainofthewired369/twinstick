@@ -425,3 +425,15 @@ console.log('PASS v1.20 life shop: escalating personal price, own wallet, stale 
 {
  const g=harness(),sent=[],c={open:true,bufferSize:4,dataChannel:{bufferedAmount:400000},send:m=>sent.push(m)};g.sendTo(c,{t:'state'});g.sendTo(c,{t:'input'});assert.equal(sent.length,0);g.sendTo(c,{t:'shop'});g.sendTo(c,{t:'respawn'});assert.deepEqual(sent.map(m=>m.t),['shop','respawn']);c.bufferSize=0;c.dataChannel.bufferedAmount=0;g.sendTo(c,{t:'state'});assert.equal(sent.at(-1).t,'state');console.log('PASS v1.23 network backpressure: skip stale transient updates without dropping shop/respawn controls; resume snapshots when clear.');
 }
+
+// Upgrade actions must work in the surviving host's shop, and refresh without another frame.
+successor.openShop();
+const migratedShopper=successor.state().players[successor.state().localId];
+P.grant(migratedShopper,0,100);migratedShopper.ready=false;
+const pendingBefore=migratedShopper.pending;
+assert(pendingBefore>0);
+assert.equal(successor.applyShop(migratedShopper.id,{action:'level',stat:migratedShopper.levelChoices[0],wave:successor.state().wave,revision:migratedShopper.revision}),true);
+assert.equal(migratedShopper.pending,pendingBefore-1);
+assert.equal(successor.applyShop(migratedShopper.id,{action:'level',stat:'invalid',wave:successor.state().wave,revision:migratedShopper.revision}),false);
+assert.equal(migratedShopper.pending,pendingBefore-1);
+console.log('PASS v1.23.1: migrated host can spend pending upgrades; invalid choices remain rejected.');
