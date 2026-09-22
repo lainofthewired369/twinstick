@@ -75,6 +75,9 @@ async function until(predicate,label){const end=Date.now()+10000;while(!predicat
   await until(()=>guest.state().visualTier===1.5&&guest.state().players[1].x===-4000,'frontier state');
   assert.equal(guest.state().worldSeed,host.state().worldSeed);
   console.log('PASS frontier: procedural seed, visual phase and unbounded coordinates reach guest');
+  host.setTier(4);host.state().players[1].x=-500;host.state().players[1].cameraAngle=-Math.PI/2;host.sendState(true);
+  await until(()=>guest.state().visualTier===4&&guest.state().players[1].x===-500,'third-person checkpoint');
+  assert.equal(guest.state().players[1].cameraAngle,-Math.PI/2);console.log('PASS third-person phase and camera heading cross real RTC');
   console.log('PASS real peer-to-peer game integration (local runtime, no relay)');
  }finally{bridge.stdin.write(JSON.stringify({stop:true})+'\n');bridge.stdin.end();}
 })().catch(error=>{console.error(error);process.exitCode=1;bridge.kill();});

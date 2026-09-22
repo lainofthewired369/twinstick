@@ -3,7 +3,7 @@
 'use strict';
 const headings=['angle','aim','cameraAngle','ramAngle'];
 const angle=(a,b,t)=>a+Math.atan2(Math.sin(b-a),Math.cos(b-a))*t;
-function create(Sphere){
+function create(Sphere,Third){
  let frames=[],local=null,signature='';
  const reset=()=>{frames=[];local=null;signature='';};
  function blend(a,b,t,sphere){
@@ -16,7 +16,7 @@ function create(Sphere){
  function receive(state,now){
   const key=[state.wave,state.visualTier,state.running,state.paused,state.between,state.migrating,state.fractureLeft>0,state.epoch].join(':');
   if(key!==signature){reset();signature=key;}
-  const frame={time:now,sphere:state.visualTier===3,open:state.visualTier===1.5||state.visualTier===2};
+  const frame={time:now,sphere:state.visualTier===3,third:state.visualTier===4,open:state.visualTier===1.5||state.visualTier===2||state.visualTier===4};
   for(const group of ['players','enemies','shots','enemyShots'])frame[group]=new Map((state[group]||[]).map(p=>[p.netId??p.id,{...p}]));
   frames.push(frame);if(frames.length>12)frames.shift();
  }
@@ -32,11 +32,11 @@ function create(Sphere){
   if(!active||p.hp<=0||now-frames.at(-1).time>250){local=null;return;}
   const sphere=frames.at(-1).sphere;
   if(!local||local.id!==p.id)local={...p};
-  const facing=sphere?(local.cameraAngle||0):0,c=Math.cos(facing),s=Math.sin(facing),slow=p.enemySlowTime>0?1-(p.enemySlow||0):1;
+  const facing=frames.at(-1).third?(p.cameraAngle??-Math.PI/2)+Math.PI/2:sphere?(local.cameraAngle||0):0,c=Math.cos(facing),s=Math.sin(facing),slow=p.enemySlowTime>0?1-(p.enemySlow||0):1;
   const kick=p.kickSpeed||0;
   const vx=p.ramLeft>0?Math.cos(p.ramAngle)*900:(input.dx*c-input.dy*s)*p.speed*slow+Math.cos(p.kickAngle||0)*kick;
   const vy=p.ramLeft>0?Math.sin(p.ramAngle)*900:(input.dx*s+input.dy*c)*p.speed*slow+Math.sin(p.kickAngle||0)*kick;
-  function advance(q,seconds){if(sphere){const n=Sphere.step(q,vx,vy,seconds);return {...q,...n,cameraAngle:Sphere.step({...q,angle:q.cameraAngle||0},vx,vy,seconds).angle};}return {...q,x:frames.at(-1).open?q.x+vx*seconds:Math.max(18,Math.min(1262,q.x+vx*seconds)),y:frames.at(-1).open?q.y+vy*seconds:Math.max(18,Math.min(702,q.y+vy*seconds))};}
+  function advance(q,seconds){if(frames.at(-1).third){const at={...q,x:q.x+vx*seconds,y:q.y+vy*seconds,cameraAngle:p.cameraAngle};return Third?Third.resolve(at,15):at;}if(sphere){const n=Sphere.step(q,vx,vy,seconds);return {...q,...n,cameraAngle:Sphere.step({...q,angle:q.cameraAngle||0},vx,vy,seconds).angle};}return {...q,x:frames.at(-1).open?q.x+vx*seconds:Math.max(18,Math.min(1262,q.x+vx*seconds)),y:frames.at(-1).open?q.y+vy*seconds:Math.max(18,Math.min(702,q.y+vy*seconds))};}
   local=advance(local,dt);
   const target=advance(p,Math.min(.1,Math.max(0,(now-frames.at(-1).time)/1000)+.05));
   const distance=sphere?Sphere.delta(local,target).distance:Math.hypot(local.x-target.x,local.y-target.y);

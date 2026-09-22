@@ -55,7 +55,7 @@ function create(env=window){
  function pose(){return {freeze:freeze>0,x:shake?(Math.random()-.5)*amplitude*2:0,y:shake?(Math.random()-.5)*amplitude*2:0};}
  function reset(){stage=0;seen.clear();freeze=rest=shake=amplitude=0;}
  function setMuted(value){muted=!!value;if(master)master.gain.setTargetAtTime(muted?0:.35,ctx.currentTime,.025);try{env.localStorage?.setItem('rr-muted',muted?'1':'0');}catch{}return muted;}
- function setTier(tier,announce=false){const next=Math.max(0,tiers.indexOf(tier));if(next===stage)return false;stage=next;if(announce&&stage){const key='evolve'+stage;profiles[key]=[180+stage*80,720+stage*180,.6+stage*.08,'sine',.16];sound(key,1);}return true;}
+ function setTier(tier,announce=false){const next=Math.max(0,tiers.indexOf(tier===4?3:tier));if(next===stage)return false;stage=next;if(announce&&stage){const key='evolve'+stage;profiles[key]=[180+stage*80,720+stage*180,.6+stage*.08,'sine',.16];sound(key,1);}return true;}
  return {setTier,get active(){return ctx?.state==='running';},get stage(){return stage;},get name(){return names[stage];},unlock,event,tick,pose,reset,setMuted,isMuted:()=>muted};
 }
 const api={create,profiles,voicePlan,tiers,names};if(typeof module!=='undefined')module.exports=api;else window.RRFeedback=api;

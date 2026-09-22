@@ -3,7 +3,7 @@
 'use strict';
 const W=1280,H=720,TAU=Math.PI*2;
 const colors={drone:'#ff6485',tank:'#ffc877',runner:'#ff9161',gunner:'#b497ff',charger:'#ff536b',splitter:'#bef784',swarm:'#c5ffb0',sentinel:'#78dfff',boss:'#fa8ee8'};
-let canvas,gl,program,buffer,failed=false,lost=false,used=0,data=new Float32Array(262144),palette={},sphereMode=false,focus={x:640,y:360},sphereUniform,software,softwareContext,backend='pending',reason='',projection=null,planetMesh=null;
+let canvas,gl,program,buffer,failed=false,lost=false,used=0,data=new Float32Array(262144),palette={},sphereMode=false,focus={x:640,y:360},sphereUniform,software,softwareContext,backend='pending',reason='',projection=null,planetMesh=null,thirdMode=false,thirdUniform,cameraUniforms,thirdCamera;
 function init(){
  try{
   canvas=document.createElement('canvas');canvas.width=960;canvas.height=540;
@@ -12,14 +12,15 @@ function init(){
   canvas.addEventListener('webglcontextlost',e=>{e.preventDefault();lost=true;});
   canvas.addEventListener('webglcontextrestored',()=>{lost=false;gl=null;failed=false;});
   const shader=(type,source)=>{const s=gl.createShader(type);gl.shaderSource(s,source);gl.compileShader(s);if(!gl.getShaderParameter(s,gl.COMPILE_STATUS))throw Error(gl.getShaderInfoLog(s));return s;};
-  const vs=shader(gl.VERTEX_SHADER,`attribute vec3 position;attribute vec3 normal;attribute vec3 color;varying vec3 tint;uniform float sphereMode;
+  const vs=shader(gl.VERTEX_SHADER,`attribute vec3 position;attribute vec3 normal;attribute vec3 color;varying vec3 tint;uniform float sphereMode;uniform float thirdMode;uniform vec3 eye;uniform vec3 cameraRight;uniform vec3 cameraUp;uniform vec3 cameraForward;
    void main(){vec3 light=normalize(vec3(-0.5,-0.8,1.0));float shade=0.38+0.62*max(0.0,dot(normal,light));float gleam=pow(max(0.0,dot(normal,normalize(light+vec3(0.0,0.0,1.0)))),24.0)*0.3*sphereMode;tint=color*shade+vec3(gleam);
+   if(thirdMode>0.5){vec3 d=position-eye;float depth=dot(d,cameraForward);float fog=clamp((depth-650.0)/3000.0,0.0,0.82);tint=mix(tint,vec3(0.025,0.035,0.075),fog);gl_Position=vec4(dot(d,cameraRight)*650.0/640.0,dot(d,cameraUp)*650.0/360.0,depth*(7012.0/6988.0)-168000.0/6988.0,depth);return;}
    // Oblique orthographic camera: the ground plane keeps exact input coordinates.
    gl_Position=vec4((position.x+position.z*0.45*(1.0-sphereMode))/640.0-1.0,1.0-(position.y-position.z*0.65*(1.0-sphereMode))/360.0,-position.z/1024.0,1.0);}`);
   const fs=shader(gl.FRAGMENT_SHADER,`precision mediump float;varying vec3 tint;void main(){gl_FragColor=vec4(tint,1.0);}`);
   program=gl.createProgram();gl.attachShader(program,vs);gl.attachShader(program,fs);gl.linkProgram(program);
   if(!gl.getProgramParameter(program,gl.LINK_STATUS))throw Error(gl.getProgramInfoLog(program));
-  sphereUniform=gl.getUniformLocation(program,'sphereMode');gl.deleteShader(vs);gl.deleteShader(fs);buffer=gl.createBuffer();gl.useProgram(program);gl.bindBuffer(gl.ARRAY_BUFFER,buffer);
+  sphereUniform=gl.getUniformLocation(program,'sphereMode');thirdUniform=gl.getUniformLocation(program,'thirdMode');cameraUniforms=['eye','cameraRight','cameraUp','cameraForward'].map(n=>gl.getUniformLocation(program,n));gl.deleteShader(vs);gl.deleteShader(fs);buffer=gl.createBuffer();gl.useProgram(program);gl.bindBuffer(gl.ARRAY_BUFFER,buffer);
   for(const [i,name] of ['position','normal','color'].entries()){const a=gl.getAttribLocation(program,name);gl.enableVertexAttribArray(a);gl.vertexAttribPointer(a,3,gl.FLOAT,false,36,i*12);}
   gl.enable(gl.DEPTH_TEST);gl.depthFunc(gl.LEQUAL);gl.clearColor(.025,.035,.075,1);
   return true;
@@ -55,7 +56,7 @@ function model(type,p,angle,color,scale=1,low=false){
  const mesh=window.RiftModels?.get(type,low);if(!mesh)return false;
  const materials={hull:'#536c87',trim:color,dark:'#152639',glass:'#9aecff',engine:'#65eaff',weapon:'#afbed1'},ca=Math.cos(angle),sa=Math.sin(angle);
  const anchor=projection?.anchor(p);
- const points=mesh.vertices.map(([vx,vy,vz])=>{const dx=(vx*ca-vy*sa)*scale,dy=(vx*sa+vy*ca)*scale,q=anchor?anchor(dx,dy,vz*scale):window.RRSphere.project(pointAt(p.x,p.y,dx,dy),focus,vz*scale);return [q.x,q.y,q.z];});
+ const points=mesh.vertices.map(([vx,vy,vz])=>{const dx=(vx*ca-vy*sa)*scale,dy=(vx*sa+vy*ca)*scale,q=thirdMode?{x:p.x+dx,y:p.y+dy,z:vz*scale}:anchor?anchor(dx,dy,vz*scale):window.RRSphere.project(pointAt(p.x,p.y,dx,dy),focus,vz*scale);return [q.x,q.y,q.z];});
  for(const [a,b,c,material] of mesh.faces)triangle(points[a],points[b],points[c],p.hit?'#ffffff':materials[material],true);
  return true;
 }
@@ -63,6 +64,11 @@ function softwareDraw(){
  if(!software){software=document.createElement('canvas');software.width=960;software.height=540;softwareContext=software.getContext('2d');}
  if(!softwareContext)return false;
  const x=softwareContext,faces=[],scale=sphereMode?1:.75;if(software.width!==W*scale){software.width=W*scale;software.height=H*scale;}x.setTransform(scale,0,0,scale,0,0);x.fillStyle='#060913';x.fillRect(0,0,W,H);
+ if(thirdMode){
+  for(let i=0;i<used;i+=27){const points=[];for(let n=0;n<3;n++){const j=i+n*9;points.push(window.RRThird.view({x:data[j],y:data[j+1]},thirdCamera,data[j+2]));}const clipped=window.RRThird.clip(points);if(clipped.length>=3)faces.push({i,points:clipped,depth:points.reduce((a,p)=>a+p.z,0)/3});}
+  faces.sort((a,b)=>b.depth-a.depth);
+  for(const f of faces){const i=f.i,shade=.38+.62*Math.max(0,(-.5*data[i+3]-.8*data[i+4]+data[i+5])/Math.hypot(.5,.8,1));x.fillStyle='rgb('+[6,7,8].map(n=>Math.round(data[i+n]*shade*255)).join(',')+')';x.beginPath();f.points.forEach((p,n)=>{const px=640+650*p.x/p.z,py=360-650*p.y/p.z;if(n)x.lineTo(px,py);else x.moveTo(px,py);});x.closePath();x.fill();}return true;
+ }
  for(let i=0;i<used;i+=27)faces.push(i);
  faces.sort((a,b)=>(data[a+2]+data[a+11]+data[a+20])-(data[b+2]+data[b+11]+data[b+20]));
  const lightLength=Math.hypot(.5,.8,1);
@@ -75,11 +81,19 @@ function softwareDraw(){
  return true;
 }
 function draw(x,s){
+ thirdMode=!!s.third&&!!window.RRThird;
  sphereMode=!!s.sphere&&!!window.RRSphere;focus=s.focus||s.players.find(p=>p.hp>0)||{x:640,y:360};
+ thirdCamera=thirdMode?window.RRThird.camera(focus):null;
  projection=sphereMode?window.RRSphere.projection?.(focus):null;
  const hardware=!failed&&!lost&&(gl||init());
  used=0;
- if(sphereMode){
+ if(thirdMode){
+  const L=window.RRThird.LIMIT;
+  // Real world-space floor tiles, pylons, perimeter walls and skyline towers.
+  for(let y=-L;y<L;y+=240)for(let a=-L;a<L;a+=240){box(a+120,y+120,238,238,-12,12,(Math.round((a+y)/240)%2)?'#1a3447':'#244457');}
+  for(const o of window.RRThird.pylons){prism(o.x,o.y,polygon(o.r,12),0,o.h,'#46627b');prism(o.x,o.y,polygon(o.r+2,12),o.h-12,5,'#72e5e1');}
+  for(const side of [-1,1]){box(0,side*(L+10),L*2,20,0,90,'#30455f');box(side*(L+10),0,20,L*2,0,90,'#30455f');for(let k=-2;k<=2;k++){box(k*850,side*(L+130),130,170,0,350+(k+2)*65,'#1a3049');box(side*(L+130),k*850,170,130,0,350+(k+2)*65,'#1a3049');}}
+ }else if(sphereMode){
   if(!planetMesh){planetMesh=[];for(let iy=0;iy<=30;iy++)for(let ix=0;ix<=60;ix++)planetMesh.push({x:ix*W/60,y:iy*H/30,n:window.RRSphere.basis({x:ix*W/60,y:iy*H/30}).n});}
   const ground=planetMesh.map(p=>{const q=projection?projection.normal(p.n,-10):window.RRSphere.project(p,focus,-10);return [q.x,q.y,q.z];});
   for(let iy=0;iy<30;iy++)for(let ix=0;ix<60;ix++){const a=ground[iy*61+ix],b=ground[iy*61+ix+1],c=ground[(iy+1)*61+ix+1],d=ground[(iy+1)*61+ix],color=(ix+iy)%2?'#315b69':'#25414f';if(a[2]<0&&b[2]<0&&c[2]<0&&d[2]<0)continue;triangle(a,b,c,color,true);triangle(a,c,d,color,true);}
@@ -100,12 +114,12 @@ function draw(x,s){
  }
  for(const d of s.drops){const c=d.kind==='crate'?'#ffd180':'#7dffd0';shadow(d.x,d.y,8);prism(d.x,d.y,polygon(8,4),4,12,c,s.reduced?0:s.t*.6,.15);}
  let detailed=0;
- const visible=p=>!sphereMode||window.RRSphere.project(p,focus).visible;
+ const visible=p=>thirdMode?window.RRThird.project(p,focus,20).visible:!sphereMode||window.RRSphere.project(p,focus).visible;
  for(const e of s.enemies){
   if(e.hp<=0||e.mirror||!visible(e))continue;const c=e.hit?'#ffffff':colors[e.type]||colors.drone,h=e.type==='boss'?46:e.type==='tank'?26:18;
   shadow(e.x,e.y,e.r+4);
   if((e.type==='lancer'||e.beamAttack)&&e.windup>0||e.beamLeft>0){const end=pointAt(e.x,e.y,Math.cos(e.aim)*(sphereMode?600:1000),Math.sin(e.aim)*(sphereMode?600:1000));line(e.x,e.y,end.x,end.y,1,e.beamLeft>0?12:2,e.beamLeft>0?'#fff1ff':'#71345d');}
-  if(sphereMode&&model(e.type,e,e.aim||0,c,e.r/25,!hardware||detailed++>=40)){if(e.slowTime>0)ring(e.x,e.y,e.r+5,3,'#a2efff');continue;}
+  if((sphereMode||thirdMode)&&model(e.type,e,e.aim||0,c,e.r/25,!hardware||detailed++>=40)){if(e.slowTime>0)ring(e.x,e.y,e.r+5,3,'#a2efff');continue;}
   const sides=['runner','charger','gunner'].includes(e.type)?3:['tank','sentinel'].includes(e.type)?4:6;
   prism(e.x,e.y,polygon(e.r,sides),2,h,c,e.aim||0,.75);
   prism(e.x,e.y,polygon(e.r*.55,sides),h+2,6,'#20314e',e.aim||0,.6);
@@ -115,7 +129,7 @@ function draw(x,s){
  }
  for(const p of [...s.players,...s.enemies.filter(e=>e.mirror).map(e=>({...e,angle:e.aim,color:e.hit?'#ffffff':e.color}))]){
   if(p.hp<=0||!visible(p))continue;shadow(p.x,p.y,27);
-  const modeled=sphereMode&&model('ship',p,p.angle,p.color,p.mirror?1.15:.85,!hardware);
+  const modeled=(sphereMode||thirdMode)&&model('ship',p,p.angle,p.color,p.mirror?1.15:.85,!hardware);
   if(!modeled){
   prism(p.x,p.y,(window.RRProgress?.hulls[p.character]||[[30,0],[-19,20],[-10,0],[-19,-20]]),3,12,p.color,p.angle,.65);
   prism(p.x,p.y,[[16,0],[-8,7],[-8,-7]],15,8,'#d4f8ff',p.angle,.4);
@@ -132,14 +146,14 @@ function draw(x,s){
  for(const b of s.enemyShots)prism(b.x,b.y,polygon(b.r,6),4,b.r*1.4,'#ff608d',0,.4);
  for(const f of s.effects){if(f.kind==='beam')line(f.x,f.y,f.bx,f.by,9,4,f.color);else ring(f.x,f.y,f.r,4,f.color,f.kind==='blast'?0:f.angle-f.arc/2,f.kind==='blast'?TAU:f.arc);}
  for(const p of s.particles.slice(-160))box(p.x,p.y,3,3,Math.max(2,p.life*18),3,p.color);
- if(hardware){const width=sphereMode?1280:960;if(canvas.width!==width){canvas.width=width;canvas.height=width*9/16;}gl.uniform1f(sphereUniform,sphereMode?1:0);gl.viewport(0,0,canvas.width,canvas.height);gl.clear(gl.COLOR_BUFFER_BIT|gl.DEPTH_BUFFER_BIT);gl.bindBuffer(gl.ARRAY_BUFFER,buffer);gl.bufferData(gl.ARRAY_BUFFER,data.subarray(0,used),gl.DYNAMIC_DRAW);gl.drawArrays(gl.TRIANGLES,0,used/9);backend='WebGL';}
+ if(hardware){const width=sphereMode?1280:960;if(canvas.width!==width){canvas.width=width;canvas.height=width*9/16;}gl.uniform1f(sphereUniform,sphereMode?1:0);gl.uniform1f(thirdUniform,thirdMode?1:0);if(thirdMode){for(const [i,v] of [thirdCamera.eye,thirdCamera.right,thirdCamera.up,thirdCamera.forward].entries())gl.uniform3fv(cameraUniforms[i],v);}gl.viewport(0,0,canvas.width,canvas.height);gl.clear(gl.COLOR_BUFFER_BIT|gl.DEPTH_BUFFER_BIT);gl.bindBuffer(gl.ARRAY_BUFFER,buffer);gl.bufferData(gl.ARRAY_BUFFER,data.subarray(0,used),gl.DYNAMIC_DRAW);gl.drawArrays(gl.TRIANGLES,0,used/9);backend='WebGL';}
  else if(softwareDraw())backend='software';else return false;
  x.drawImage(hardware?canvas:software,0,0,W,H);
  if(sphereMode){
   x.save();x.strokeStyle='#7feaff66';x.lineWidth=3;x.beginPath();x.arc(640,360,452,0,TAU);x.stroke();x.strokeStyle='#8ab8ff22';x.lineWidth=8;x.stroke();
   for(let i=0;i<75;i++){const a=(i*193.17)%1280,b=(i*79.3)%720;if(Math.hypot(a-640,b-360)>460){x.fillStyle=i%3?'#9ac4dc77':'#ffffff';x.fillRect(a,b,i%5?1:2,1);}}x.restore();
  }
- for(const p of s.players){if(p.hp<=0)continue;const q=sphereMode?window.RRSphere.project(p,focus,20):p;if(q.visible===false)continue;x.fillStyle='#060d19';x.fillRect(q.x-25,q.y+29,50,5);x.fillStyle=p.color;x.fillRect(q.x-25,q.y+29,50*Math.max(0,p.hp)/p.maxHp,5);if(sphereMode){x.font='bold 11px system-ui';x.textAlign='center';x.fillText('P'+(p.id+1),q.x,q.y+47);}}
+ for(const p of s.players){if(p.hp<=0)continue;const q=thirdMode?window.RRThird.project(p,focus,20):sphereMode?window.RRSphere.project(p,focus,20):p;if(q.visible===false)continue;x.fillStyle='#060d19';x.fillRect(q.x-25,q.y+29,50,5);x.fillStyle=p.color;x.fillRect(q.x-25,q.y+29,50*Math.max(0,p.hp)/p.maxHp,5);if(sphereMode){x.font='bold 11px system-ui';x.textAlign='center';x.fillText('P'+(p.id+1),q.x,q.y+47);}}
 
  if(s.paused){x.fillStyle='#040819bb';x.fillRect(0,0,W,H);x.textAlign='center';x.fillStyle='#e8f7ff';x.font='700 40px system-ui';x.fillText('PAUSED',W/2,H/2);}
  return true;
