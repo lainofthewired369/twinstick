@@ -3,7 +3,7 @@
 'use strict';
 const W=1280,H=720,TAU=Math.PI*2;
 const colors={drone:'#ff6485',tank:'#ffc877',runner:'#ff9161',gunner:'#b497ff',charger:'#ff536b',splitter:'#bef784',swarm:'#c5ffb0',sentinel:'#78dfff',boss:'#fa8ee8'};
-let canvas,gl,program,buffer,failed=false,lost=false,used=0,data=new Float32Array(262144),palette={},sphereMode=false,focus={x:640,y:360},sphereUniform,software,softwareContext,backend='pending',reason='';
+let canvas,gl,program,buffer,failed=false,lost=false,used=0,data=new Float32Array(262144),palette={},sphereMode=false,focus={x:640,y:360},sphereUniform,software,softwareContext,backend='pending',reason='',projection=null,planetMesh=null;
 function init(){
  try{
   canvas=document.createElement('canvas');canvas.width=960;canvas.height=540;
@@ -27,10 +27,11 @@ function init(){
 }
 function rgb(c){return palette[c]||(palette[c]=[1,3,5].map(i=>parseInt(c.slice(i,i+2),16)/255));}
 function triangle(a,b,c,color,projected=false){
- if(sphereMode&&!projected){const project=p=>{const q=window.RRSphere.project({x:p[0],y:p[1]},focus,p[2]);return [q.x,q.y,q.z];};a=project(a);b=project(b);c=project(c);}
- const u=b.map((v,i)=>v-a[i]),v=c.map((q,i)=>q-a[i]),n=[u[1]*v[2]-u[2]*v[1],u[2]*v[0]-u[0]*v[2],u[0]*v[1]-u[1]*v[0]],len=Math.hypot(...n)||1,t=rgb(color);
+ if(sphereMode&&!projected){const project=p=>{const q=projection?projection.point({x:p[0],y:p[1]},p[2]):window.RRSphere.project({x:p[0],y:p[1]},focus,p[2]);return [q.x,q.y,q.z];};a=project(a);b=project(b);c=project(c);}
+ const ux=b[0]-a[0],uy=b[1]-a[1],uz=b[2]-a[2],vx=c[0]-a[0],vy=c[1]-a[1],vz=c[2]-a[2];
+ let nx=uy*vz-uz*vy,ny=uz*vx-ux*vz,nz=ux*vy-uy*vx;const len=Math.hypot(nx,ny,nz)||1,t=rgb(color);nx/=len;ny/=len;nz/=len;
  if(used+27>data.length){const larger=new Float32Array(data.length*2);larger.set(data);data=larger;}
- for(const p of [a,b,c]){for(const q of p)data[used++]=q;for(const q of n)data[used++]=q/len;for(const q of t)data[used++]=q;}
+ for(const p of [a,b,c]){data[used++]=p[0];data[used++]=p[1];data[used++]=p[2];data[used++]=nx;data[used++]=ny;data[used++]=nz;data[used++]=t[0];data[used++]=t[1];data[used++]=t[2];}
 }
 function prism(x,y,points,z,height,color,angle=0,scale=.82){
  const ca=Math.cos(angle),sa=Math.sin(angle),at=(p,h,s=1)=>{const dx=(p[0]*ca-p[1]*sa)*s,dy=(p[0]*sa+p[1]*ca)*s;if(sphereMode){const q=window.RRSphere.step({x,y},dx,dy);return [q.x,q.y,h];}return [x+dx,y+dy,h];};
@@ -53,7 +54,8 @@ function shadow(x,y,r){prism(x+7,y+9,polygon(r,10),.2,0,'#080d20',0,1);}
 function model(type,p,angle,color,scale=1,low=false){
  const mesh=window.RiftModels?.get(type,low);if(!mesh)return false;
  const materials={hull:'#536c87',trim:color,dark:'#152639',glass:'#9aecff',engine:'#65eaff',weapon:'#afbed1'},ca=Math.cos(angle),sa=Math.sin(angle);
- const points=mesh.vertices.map(([vx,vy,vz])=>{const at=pointAt(p.x,p.y,(vx*ca-vy*sa)*scale,(vx*sa+vy*ca)*scale),q=window.RRSphere.project(at,focus,vz*scale);return [q.x,q.y,q.z];});
+ const anchor=projection?.anchor(p);
+ const points=mesh.vertices.map(([vx,vy,vz])=>{const dx=(vx*ca-vy*sa)*scale,dy=(vx*sa+vy*ca)*scale,q=anchor?anchor(dx,dy,vz*scale):window.RRSphere.project(pointAt(p.x,p.y,dx,dy),focus,vz*scale);return [q.x,q.y,q.z];});
  for(const [a,b,c,material] of mesh.faces)triangle(points[a],points[b],points[c],p.hit?'#ffffff':materials[material],true);
  return true;
 }
@@ -74,10 +76,13 @@ function softwareDraw(){
 }
 function draw(x,s){
  sphereMode=!!s.sphere&&!!window.RRSphere;focus=s.focus||s.players.find(p=>p.hp>0)||{x:640,y:360};
+ projection=sphereMode?window.RRSphere.projection?.(focus):null;
  const hardware=!failed&&!lost&&(gl||init());
  used=0;
  if(sphereMode){
-  for(let iy=0;iy<30;iy++)for(let ix=0;ix<60;ix++){const ax=ix*W/60,bx=(ix+1)*W/60,ay=iy*H/30,by=(iy+1)*H/30,c=(ix+iy)%2?'#315b69':'#25414f';triangle([ax,ay,-10],[bx,ay,-10],[bx,by,-10],c);triangle([ax,ay,-10],[bx,by,-10],[ax,by,-10],c);}
+  if(!planetMesh){planetMesh=[];for(let iy=0;iy<=30;iy++)for(let ix=0;ix<=60;ix++)planetMesh.push({x:ix*W/60,y:iy*H/30,n:window.RRSphere.basis({x:ix*W/60,y:iy*H/30}).n});}
+  const ground=planetMesh.map(p=>{const q=projection?projection.normal(p.n,-10):window.RRSphere.project(p,focus,-10);return [q.x,q.y,q.z];});
+  for(let iy=0;iy<30;iy++)for(let ix=0;ix<60;ix++){const a=ground[iy*61+ix],b=ground[iy*61+ix+1],c=ground[(iy+1)*61+ix+1],d=ground[(iy+1)*61+ix],color=(ix+iy)%2?'#315b69':'#25414f';if(a[2]<0&&b[2]<0&&c[2]<0&&d[2]<0)continue;triangle(a,b,c,color,true);triangle(a,c,d,color,true);}
  }else if(s.frontier){
  box(W/2,H/2,W+200,H+200,-18,17,'#142a30');
  const left=s.fieldCamera.x-W/2,top=s.fieldCamera.y-H/2;

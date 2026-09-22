@@ -47,10 +47,10 @@ function applyItem(p,id,tier=1){
 }
 const starters=['pistol','smg','shotgun','knife','spear'];
 let serial=0;
-function weapon(id,tier=1){return {uid:++serial,id,tier,cool:0,spin:0};}
+function weapon(id,tier=1,source='equipment'){return {uid:++serial,id,tier,cool:0,spin:0,source};}
 function syncSerial(players){for(const p of players)for(const entry of [...(p.weapons||[]),...(p.shop||[])])if(Number.isFinite(entry?.uid))serial=Math.max(serial,entry.uid);}
 function config(c){return {character:Object.hasOwn(characters,c?.character)?c.character:'ranger',starter:starters.includes(c?.starter)?c.starter:'pistol'};}
-function init(p,c){c=config(c);const a=characters[c.character];Object.assign(p,{character:c.character,level:1,xp:0,skillPoints:0,skills:['core'],abilities:{},abilityTimers:{},orbitTime:0,materials:0,pending:0,levelChoices:[],armor:a.armor||0,regen:0,luck:a.luck||0,harvest:a.harvest||0,crit:.05,range:1,blastScale:1,leech:0,slow:0,pierce:0,killHeal:0,materialBonus:0,xpBonus:0,berserk:0,maxShield:0,shield:0,shieldDelay:0,multi:1,dashTime:30,pickup:90*(a.pickup||1),shop:[],rerolls:0,ready:false,revision:0,items:[],weapons:[weapon(c.starter)]});p.maxHp+=a.hp||0;p.hp=p.maxHp;p.speed*=a.speed||1;p.damage*=a.damage||1;return p;}
+function init(p,c){c=config(c);const a=characters[c.character];Object.assign(p,{character:c.character,level:1,xp:0,skillPoints:0,skills:['core'],abilities:{},abilityTimers:{},orbitTime:0,materials:0,pending:0,levelChoices:[],armor:a.armor||0,regen:0,luck:a.luck||0,harvest:a.harvest||0,crit:.05,range:1,blastScale:1,leech:0,slow:0,pierce:0,killHeal:0,materialBonus:0,xpBonus:0,berserk:0,maxShield:0,shield:0,shieldDelay:0,multi:1,dashTime:30,pickup:90*(a.pickup||1),shop:[],rerolls:0,ready:false,revision:0,items:[],weapons:[weapon(c.starter,1,'starter')]});p.maxHp+=a.hp||0;p.hp=p.maxHp;p.speed*=a.speed||1;p.damage*=a.damage||1;return p;}
 function threshold(p){return 8+p.level*5;}
 function sample(keys,n,rng=Math.random){const a=[...keys],out=[];while(out.length<n&&a.length)out.push(a.splice(Math.floor(rng()*a.length),1)[0]);return out;}
 function grant(p,materials,xp){const cash=materials*(1+p.materialBonus)+(p.materialCarry||0),experience=xp*(1+p.xpBonus)+(p.xpCarry||0);p.materials+=Math.floor(cash);p.materialCarry=cash-Math.floor(cash);p.xp+=Math.floor(experience);p.xpCarry=experience-Math.floor(experience);while(p.xp>=threshold(p)){p.xp-=threshold(p);p.level++;p.pending++;p.skillPoints++;}if(p.pending&&!p.levelChoices.length)p.levelChoices=sample(Object.keys(stats),3);}
@@ -70,8 +70,8 @@ function action(p,m,wave,weaponIds){
  else {
   if(p.ready&&!(m.action==='life'&&p.hp<=0))return false;
   if(m.action==='life'){const cost=lifeCost(p);if(p.materials<cost)return false;p.materials-=cost;p.lives=(p.lives??10)+1;}
-  else if(m.action==='buy'){if(!o||p.materials<o.cost)return false;const same=p.weapons.find(w=>w.id===o.id&&w.tier===o.tier&&w.tier<4);if(o.kind==='weapon'&&p.weapons.length>=6&&!same)return false;p.materials-=o.cost;if(o.kind==='weapon'){if(p.weapons.length>=6){same.tier++;}else p.weapons.push(weapon(o.id,o.tier));}else {applyItem(p,o.id,o.tier);p.items.push({id:o.id,tier:o.tier});}p.shop[p.shop.indexOf(o)]=null;}
-  else if(m.action==='combine'){const other=w&&partner(p,w);if(!other)return false;w.tier++;p.weapons.splice(p.weapons.indexOf(other),1);}
+  else if(m.action==='buy'){if(!o||p.materials<o.cost)return false;const same=p.weapons.find(w=>w.id===o.id&&w.tier===o.tier&&w.tier<4);if(o.kind==='weapon'&&p.weapons.length>=6&&!same)return false;p.materials-=o.cost;if(o.kind==='weapon'){if(p.weapons.length>=6){same.tier++;same.source='shop';}else p.weapons.push(weapon(o.id,o.tier,'shop'));}else {applyItem(p,o.id,o.tier);p.items.push({id:o.id,tier:o.tier,source:'shop'});}p.shop[p.shop.indexOf(o)]=null;}
+  else if(m.action==='combine'){const other=w&&partner(p,w);if(!other)return false;w.tier++;w.source='combined';p.weapons.splice(p.weapons.indexOf(other),1);}
   else if(m.action==='sell'){if(!w||p.weapons.length<=1)return false;p.materials+=sellValue(w,wave);p.weapons.splice(p.weapons.indexOf(w),1);}
   else if(m.action==='lock'){if(!o)return false;o.locked=!o.locked;}
   else if(m.action==='reroll'){const cost=rerollCost(p,wave);if(p.materials<cost||p.shop.every(o=>o?.locked))return false;p.materials-=cost;p.rerolls++;restock(p,wave,weaponIds);}
@@ -81,7 +81,7 @@ function action(p,m,wave,weaponIds){
  }
  p.revision++;return true;
 }
-function loot(p,id){if(p.weapons.length<6)p.weapons.push(weapon(id));else {const w=p.weapons.find(w=>w.id===id&&w.tier===1);if(w)w.tier++;else p.materials+=12;}}
+function loot(p,id){if(p.weapons.length<6)p.weapons.push(weapon(id,1,'shared-crate'));else {const w=p.weapons.find(w=>w.id===id&&w.tier===1);if(w){w.tier++;w.source='shared-crate';}else p.materials+=12;}p.revision++;}
 const api={skills:S,syncSerial,tiers,characters,stats,items,applyItem,starters,weapon,config,init,threshold,grant,apply,rarity,price,restock,open,partner,sellValue,rerollCost,lifeCost,action,loot};
 if(typeof module!=='undefined')module.exports=api;else window.RRProgress=api;
 })();

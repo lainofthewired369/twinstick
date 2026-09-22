@@ -3,8 +3,9 @@
 'use strict';
 const cache=new Map();
 function build(type,low=false){
- const vertices=[],faces=[],segments=low?5:8;
+ const vertices=[],faces=[],segments=low?4:8;
  function tube(stations,y=0,z=0,material='hull',count=segments){
+  if(low&&stations.length>3)stations=[stations[0],stations[Math.floor(stations.length/2)],stations.at(-1)];
   if(stations[0][0]>stations.at(-1)[0])stations=[...stations].reverse();
   const start=vertices.length;
   for(const [x,ry,rz] of stations)for(let j=0;j<count;j++){const a=j*Math.PI*2/count;vertices.push([x,y+Math.cos(a)*ry,z+Math.sin(a)*rz]);}

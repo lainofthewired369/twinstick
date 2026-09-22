@@ -14,6 +14,12 @@ function step(p,vx,vy,dt=1){
 }
 function cameraBasis(focus){const q=basis(focus),a=focus.cameraAngle||0,c=Math.cos(a),s=Math.sin(a);return {n:q.n,east:q.east.map((v,i)=>v*c+q.south[i]*s),south:q.south.map((v,i)=>v*c-q.east[i]*s)};}
 function project(p,focus,height=0){const q=cameraBasis(focus),n=basis(p).n,r=450+height*.225;return {x:640+dot(n,q.east)*r,y:360+dot(n,q.south)*r,z:dot(n,q.n)*r,visible:dot(n,q.n)>0};}
+// Reuse the camera basis for a complete frame and each model's local tangent basis.
+function projection(focus){
+ const camera=cameraBasis(focus),apply=(n,height=0)=>{const r=450+height*.225;return {x:640+dot(n,camera.east)*r,y:360+dot(n,camera.south)*r,z:dot(n,camera.n)*r,visible:dot(n,camera.n)>0};};
+ function anchor(p){const b=basis(p);return (dx,dy,height=0)=>{const d=Math.hypot(dx,dy);if(!d)return apply(b.n,height);const a=d/R,c=Math.cos(a),s=Math.sin(a)/d,n=b.n.map((v,i)=>v*c+(b.east[i]*dx+b.south[i]*dy)*s);return apply(n,height);};}
+ return {normal:apply,point:(p,h=0)=>apply(basis(p).n,h),anchor};
+}
 function unproject(x,y,focus){let a=(x-640)/450,b=(y-360)/450,l=Math.hypot(a,b);if(l>1){a/=l;b/=l;}const z=Math.sqrt(Math.max(0,1-a*a-b*b)),q=cameraBasis(focus);return position(q.east.map((v,i)=>v*a+q.south[i]*b+q.n[i]*z));}
-const api={R,basis,position,delta,step,project,unproject};if(typeof module!=='undefined')module.exports=api;else window.RRSphere=api;
+const api={R,basis,position,delta,step,project,projection,unproject};if(typeof module!=='undefined')module.exports=api;else window.RRSphere=api;
 })();

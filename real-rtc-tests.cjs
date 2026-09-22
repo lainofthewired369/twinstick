@@ -48,6 +48,12 @@ async function until(predicate,label){const end=Date.now()+10000;while(!predicat
   await until(()=>host.state().players[1].weapons.length===oldCount+1,'remote purchase');
   assert.equal(host.state().players[0].weapons.length,1);
   console.log('PASS shop: remote purchase reaches host and affects only the owning ship');
+  const itemBuyer=guest.state().players[1],itemOffer=itemBuyer.shop.find(o=>o?.kind==='item'),hostItems=host.state().players[0].items.length;
+  guest.send({t:'shop',action:'buy',uid:itemOffer.uid,wave:1,revision:itemBuyer.revision,id:0});
+  await until(()=>guest.state().players[1].items.length===1,'personal item purchase');assert.equal(host.state().players[0].items.length,hostItems);
+  const inventory=JSON.stringify(guest.state().players[1].items);host.state().players[1].x+=1;const nextX=host.state().players[1].x;host.sendState(false);
+  await until(()=>Math.abs(guest.state().players[1].x-nextX)<.011,'compact snapshot');assert.equal(JSON.stringify(guest.state().players[1].items),inventory);
+  console.log('PASS inventory isolation: item belongs only to buyer and compact snapshots preserve it');
   const lifeBuyer=guest.state().players[1],beforeLives=lifeBuyer.lives,beforeMoney=lifeBuyer.materials,lifePrice=P.lifeCost(lifeBuyer);
   guest.send({t:'shop',action:'life',wave:1,revision:lifeBuyer.revision,cost:0,id:0});
   await until(()=>guest.state().players[1].lives===beforeLives+1,'guest life purchase');
