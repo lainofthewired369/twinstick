@@ -16,7 +16,14 @@ function background(x,W,H,t,reduced){
 }
 function ship(x,p,t,reduced,refined=false){if(p.hp<=0)return;x.save();x.translate(p.x,p.y);x.rotate(p.angle);x.lineWidth=1.5;
  const flame=22+(reduced?0:Math.sin(t*24+p.id)*5);polygon(x,[[-14,-7],[-flame-18,0],[-14,7]],'#59bcff35');polygon(x,[[-14,-4],[-flame,0],[-14,4]],p.color);polygon(x,[[-15,-2],[-23,0],[-15,2]],'#efffff');
- x.shadowColor=p.color;x.shadowBlur=13;polygon(x,window.RRProgress?.hulls[p.character]||[[29,0],[-16,-18],[-9,-5],[-16,18]],'#233f5c',p.color);x.shadowBlur=0;polygon(x,[[24,0],[-8,-4],[-12,-13]],'#99d9e9');polygon(x,[[24,0],[-12,13],[-8,4]],'#3b6686');polygon(x,[[13,0],[-4,-5],[-8,0],[-4,5]],'#d9ffff',p.color);
+ // Preserve the original faceted Ranger; other ships use the same lit armor language.
+ const original=[[29,0],[-16,-18],[-9,-5],[-16,18]],hull=p.character&&p.character!=='ranger'?(window.RRProgress?.hulls[p.character]||original):original;
+ x.shadowColor=p.color;x.shadowBlur=13;polygon(x,hull,'#233f5c',p.color);x.shadowBlur=0;
+ if(!p.character||p.character==='ranger'){polygon(x,[[24,0],[-8,-4],[-12,-13]],'#99d9e9');polygon(x,[[24,0],[-12,13],[-8,4]],'#3b6686');}
+ else {for(let i=0;i<hull.length;i++){const a=hull[i],b=hull[(i+1)%hull.length];polygon(x,[[0,0],a.map(v=>v*.88),b.map(v=>v*.88)],(a[1]+b[1])<0?'#99d9e9':'#3b6686');}polygon(x,[[18,0],[-12,-5],[-16,0],[-12,5]],'#233f5c');
+  if(p.character==='bulwark'||p.character==='engineer'){for(const side of [-1,1]){polygon(x,[[-17,side*10],[-17,side*20],[-7,side*20],[-3,side*10]],'#294e6a',p.color);x.fillStyle='#d9ffff';x.fillRect(-20,side*15-2,6,4);}}
+ }
+ polygon(x,[[13,0],[-4,-5],[-8,0],[-4,5]],'#d9ffff',p.color);
 
  if(refined){x.strokeStyle='#e0fff599';x.lineWidth=.7;x.beginPath();x.moveTo(22,0);x.lineTo(-10,-13);x.moveTo(22,0);x.lineTo(-10,13);x.stroke();for(let k=0;k<3;k++){x.fillStyle=k%2?'#10202e':'#7bb7bc';x.fillRect(-13+k*5,-8,3,3);x.fillRect(-13+k*5,5,3,3);}x.fillStyle='#ffffff';x.fillRect(8,-1,7,2);}
  if(p.shield>0){x.globalAlpha=.3+.4*p.shield/Math.max(1,p.maxShield);circle(x,0,0,32,p.color,1.5);}x.restore();
