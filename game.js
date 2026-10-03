@@ -252,6 +252,14 @@ function start(m){
  running=true;paused=false;between=false;lastUI='';nextWave();show('none');sendState();
 }
 function nextWave(){wave++;recordProgress();enemyScale=difficultyScale();spawnLeft=Math.min(160,Math.ceil((5+wave*3)*(1+Math.max(0,activePlayers().length-2)*.35)));spawnTimer=.6;between=false;choices=[];bossSpawned=false;enemyShots=[];}
+function skipLevel(){
+ if(!running||between||migrating||fractureLeft>0||(mode==='online'&&!isHost)||!activePlayers().some(p=>p.hp>0))return false;
+ enemies=[];spawnLeft=0;spawnTimer=0;effects=[];damageNumbers=[];
+ breakRift(); // Keep the normal visual milestone even when its boss is skipped.
+ openShop(); // Collect existing drops and apply the normal wave-clear rewards.
+ nextWave();paused=false;resetInput();lastUI='';ui();sendState();
+ return true;
+}
 function teamPower(){
  const values=activePlayers().map(p=>{
   const abilityPower=1+Object.values(p.abilities||{}).filter(Boolean).length*.18;
@@ -703,6 +711,8 @@ function ui(){
  $('main').classList.toggle('rift-evolved',visualTier>=1);
  const active=running&&!paused&&!between&&!migrating&&fractureLeft<=0&&overlay==='none';
  $('#touch').classList.toggle('active',active);
+ const canSkip=running&&!between&&!migrating&&fractureLeft<=0&&overlay==='none'&&(mode!=='online'||isHost)&&activePlayers().some(p=>p.hp>0);
+ $('#skipLevelBtn').classList.toggle('hidden',!canSkip);$('#skipLevelBtn').disabled=!canSkip;
  $('#pauseBtn').textContent=paused?'▶':'Ⅱ';$('#pauseBtn').disabled=!(running||paused)||fractureLeft>0||migrating;
  const p=players[localId];$('#loadoutHud').textContent=running&&p?'Lv '+p.level+' · XP '+p.xp+'/'+P.threshold(p)+' · '+p.materials+' ◇ · HP '+Math.ceil(p.hp)+'/'+p.maxHp+' · LIVES '+(p.lives??10)+(p.downed?' · REVIVE '+(10-(p.reviveProgress||0)).toFixed(1)+'s':p.hp<=0?' · ELIMINATED':'')+(p.maxShield?' · SH '+Math.ceil(p.shield):'')+' · '+p.weapons.length+'/6 · THREAT ×'+(enemyScale.health*latePressure()).toFixed(2)+' · RECOVERY '+Math.round(healingEfficiency()*100)+'% · RAM '+(p.dash>0?Math.ceil(p.dash)+'s':'READY')+(inThird()?' · LAYER VI · THIRD PERSON':visualTier===3?' · LAYER V · SPHERE':visualTier===2?' · LAYER IV · 3D':visualTier===1.5?' · LAYER III · FRONTIER':visualTier?' · LAYER II':''):'';$('#dashTouch').textContent=p?.dash>0?'RAM '+Math.ceil(p.dash)+'s':'RAM';
  if(overlay==='skills'&&!between&&!treePreview)show('none');
@@ -1067,6 +1077,7 @@ C.addEventListener('pointermove',e=>{if(e.pointerType==='mouse')mousePos(e);});
 C.addEventListener('pointerdown',e=>{if(e.pointerType==='mouse'&&e.button===0){mousePos(e);mouse.down=true;}});
 addEventListener('pointerup',e=>{if(e.pointerType==='mouse')mouse.down=false;});
 $('#pauseBtn').onclick=()=>{if(!running||between||fractureLeft>0||migrating)return;if(mode==='online'&&!isHost)send({t:'pause'});else {paused=!paused;resetInput();sendState();}};
+$('#skipLevelBtn').onclick=skipLevel;
 $$('[data-action]').forEach(b=>b.onclick=async()=>{
  const a=b.dataset.action;
  if(a==='solo'||a==='local'){cleanup();localId=0;startChoice=a;armoryPlayer=0;show('armory');armory();}

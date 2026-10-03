@@ -83,3 +83,7 @@ main{touch-action:pan-x pan-y;min-width:0}
 
 .ship-preview{display:block;width:100%;height:80px;fill:#153246;stroke:#7dffd0;stroke-width:2}.ship-preview path{fill:#d8ffff;stroke:none}#slots button:disabled .ship-preview{stroke:#7890a5}#slots button.selected .ship-preview{filter:drop-shadow(0 0 6px #7dffd088)}
 .shop.level-pending .skill-entry{margin-left:0}
+/* Place the wave skip above the arena, away from movement and firing sticks. */
+.skip-level{position:absolute;top:66px;right:max(10px,env(safe-area-inset-right));z-index:4;min-height:44px;padding:8px 12px;font-size:11px;touch-action:manipulation;background:#10293aee;border-color:var(--mint);color:var(--mint)}
+.skip-level.hidden{display:none}
+@media(orientation:landscape) and (max-height:540px){.skip-level{top:56px;font-size:10px;padding:6px 10px}}
