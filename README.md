@@ -1,5 +1,12 @@
-# Rift Runners (v1.9)
+# Rift Runners (v1.28.0)
 Play: https://lainofthewired369.github.io/twinstick/
+
+## Current shift progression and third-person controls
+The five visual shifts now trigger after defeating the bosses of levels 1, 2, 3, 4 and 5: enhanced 2D, endless frontier, 3D, spherical planet, then third-person arena. Level 6 begins in third-person mode; this final mode continues on later levels. Skipping a level also plays its shift. There are still six visual stages including the starting look.
+
+In third-person mode, mouse movement turns the chase camera; click the arena to capture the mouse and hold left click to fire. Escape pauses and releases the mouse. Controller right-stick horizontal movement turns the camera; RT fires. On mobile, the right stick turns the camera and fires forward while held, including holding its center to fire straight ahead. The left stick moves relative to the camera. Ship facing, mounted weapons and shots share the same direction on the hover plane. Earlier modes retain cursor/stick aiming and their original firing controls.
+
+Protocol 25 requires all players to refresh to v1.28.0 and create a new room. The version notes below describe earlier releases; their old shift schedules are superseded by this progression.
 
 ## Graphics evolve at waves five, ten and fifteen
 There is one game at the main address. The old riftbreak.html link redirects there. Visual preview: https://lainofthewired369.github.io/twinstick/rift-preview.html .

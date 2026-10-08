@@ -12,7 +12,7 @@
    if(active)onActive();
    if(pressed(9))onPause();
    const before=inputs.get(pad.index);
-   inputs.set(pad.index,{dx:move.x,dy:move.y,ax:aim.x,ay:aim.y,fire:Math.hypot(aim.x,aim.y)>.05||!!buttons[7],dash:playing&&(!!before?.dash||pressed(4)||pressed(0)),active});
+   inputs.set(pad.index,{dx:move.x,dy:move.y,ax:aim.x,ay:aim.y,fireButton:!!buttons[7],fire:Math.hypot(aim.x,aim.y)>.05||!!buttons[7],dash:playing&&(!!before?.dash||pressed(4)||pressed(0)),active});
    if(!playing){
     if(pressed(0))onNavigate('confirm');
     else if(pressed(1))onNavigate('back');
